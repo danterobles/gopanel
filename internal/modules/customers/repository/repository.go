@@ -114,7 +114,14 @@ func (r *Repository) List(ctx context.Context, tenantID string, options ListOpti
 		return nil, 0, ErrInvalidOptions
 	}
 	search := strings.NewReplacer("=", "==", "%", "=%", "_", "=_").Replace(options.Search)
-	items, err := r.q.ListCustomers(ctx, dbgen.ListCustomersParams{TenantID: tenantID, Status: options.Status, Search: search, Sort: options.Sort, Limit: int32(options.PageSize), Offset: int32((options.Page - 1) * options.PageSize)})
+	var items []dbgen.Customer
+	var err error
+	if options.Sort == "created_desc" {
+		items, err = r.q.ListCustomersRecent(ctx, dbgen.ListCustomersRecentParams{TenantID: tenantID, Status: options.Status, Search: search, Limit: int32(options.PageSize), Offset: int32((options.Page - 1) * options.PageSize)})
+	} else {
+		items, err = r.q.ListCustomers(ctx, dbgen.ListCustomersParams{TenantID: tenantID, Status: options.Status, Search: search, Sort: options.Sort, Limit: int32(options.PageSize), Offset: int32((options.Page - 1) * options.PageSize)})
+	}
+
 	if err != nil {
 		return nil, 0, fmt.Errorf("list customers: %w", err)
 	}

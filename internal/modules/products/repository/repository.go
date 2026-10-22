@@ -117,7 +117,14 @@ func (r *Repository) List(ctx context.Context, tenantID string, options ListOpti
 		return nil, 0, ErrInvalidOptions
 	}
 	search := strings.NewReplacer("=", "==", "%", "=%", "_", "=_").Replace(options.Search)
-	items, err := r.q.ListProducts(ctx, dbgen.ListProductsParams{TenantID: tenantID, Status: options.Status, Search: search, Sort: options.Sort, Limit: int32(options.PageSize), Offset: int32((options.Page - 1) * options.PageSize)})
+	var items []dbgen.Product
+	var err error
+	if options.Sort == "created_desc" {
+		items, err = r.q.ListProductsRecent(ctx, dbgen.ListProductsRecentParams{TenantID: tenantID, Status: options.Status, Search: search, Limit: int32(options.PageSize), Offset: int32((options.Page - 1) * options.PageSize)})
+	} else {
+		items, err = r.q.ListProducts(ctx, dbgen.ListProductsParams{TenantID: tenantID, Status: options.Status, Search: search, Sort: options.Sort, Limit: int32(options.PageSize), Offset: int32((options.Page - 1) * options.PageSize)})
+	}
+
 	if err != nil {
 		return nil, 0, fmt.Errorf("list products: %w", err)
 	}

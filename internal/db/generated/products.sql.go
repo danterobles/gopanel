@@ -192,6 +192,67 @@ func (q *Queries) ListProducts(ctx context.Context, arg ListProductsParams) ([]P
 	return items, nil
 }
 
+const listProductsRecent = `-- name: ListProductsRecent :many
+SELECT id,tenant_id,sku,name,description,price_cents,currency,status,created_at,updated_at,deleted_at,active_sku
+FROM products WHERE tenant_id=? AND deleted_at IS NULL
+AND (?='' OR status=?)
+AND (?='' OR name LIKE CONCAT('%',?,'%') ESCAPE '=' OR sku LIKE CONCAT('%',?,'%') ESCAPE '=')
+ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?
+`
+
+type ListProductsRecentParams struct {
+	TenantID string
+	Status   string
+	Search   interface{}
+	Limit    int32
+	Offset   int32
+}
+
+func (q *Queries) ListProductsRecent(ctx context.Context, arg ListProductsRecentParams) ([]Product, error) {
+	rows, err := q.db.QueryContext(ctx, listProductsRecent,
+		arg.TenantID,
+		arg.Status,
+		arg.Status,
+		arg.Search,
+		arg.Search,
+		arg.Search,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Product{}
+	for rows.Next() {
+		var i Product
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Sku,
+			&i.Name,
+			&i.Description,
+			&i.PriceCents,
+			&i.Currency,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.ActiveSku,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateProduct = `-- name: UpdateProduct :execrows
 UPDATE products SET sku=?,name=?,description=?,price_cents=?,currency=?,status=? WHERE tenant_id=? AND id=? AND deleted_at IS NULL
 `

@@ -181,6 +181,65 @@ func (q *Queries) ListCustomers(ctx context.Context, arg ListCustomersParams) ([
 	return items, nil
 }
 
+const listCustomersRecent = `-- name: ListCustomersRecent :many
+SELECT id,tenant_id,name,email,phone,status,notes,created_at,updated_at,deleted_at
+FROM customers WHERE tenant_id=? AND deleted_at IS NULL
+AND (?='' OR status=?)
+AND (?='' OR name LIKE CONCAT('%',?,'%') ESCAPE '=' OR COALESCE(email,'') LIKE CONCAT('%',?,'%') ESCAPE '=')
+ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?
+`
+
+type ListCustomersRecentParams struct {
+	TenantID string
+	Status   string
+	Search   interface{}
+	Limit    int32
+	Offset   int32
+}
+
+func (q *Queries) ListCustomersRecent(ctx context.Context, arg ListCustomersRecentParams) ([]Customer, error) {
+	rows, err := q.db.QueryContext(ctx, listCustomersRecent,
+		arg.TenantID,
+		arg.Status,
+		arg.Status,
+		arg.Search,
+		arg.Search,
+		arg.Search,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Customer{}
+	for rows.Next() {
+		var i Customer
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Name,
+			&i.Email,
+			&i.Phone,
+			&i.Status,
+			&i.Notes,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateCustomer = `-- name: UpdateCustomer :execrows
 UPDATE customers SET name=?,email=?,phone=?,status=?,notes=? WHERE tenant_id=? AND id=? AND deleted_at IS NULL
 `

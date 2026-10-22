@@ -30,3 +30,10 @@ UPDATE products SET sku=?,name=?,description=?,price_cents=?,currency=?,status=?
 
 -- name: DeleteProduct :execrows
 UPDATE products SET deleted_at=? WHERE tenant_id=? AND id=? AND deleted_at IS NULL;
+
+-- name: ListProductsRecent :many
+SELECT id,tenant_id,sku,name,description,price_cents,currency,status,created_at,updated_at,deleted_at,active_sku
+FROM products WHERE tenant_id=sqlc.arg(tenant_id) AND deleted_at IS NULL
+AND (sqlc.arg(status)='' OR status=sqlc.arg(status))
+AND (sqlc.arg(search)='' OR name LIKE CONCAT('%',sqlc.arg(search),'%') ESCAPE '=' OR sku LIKE CONCAT('%',sqlc.arg(search),'%') ESCAPE '=')
+ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?;
