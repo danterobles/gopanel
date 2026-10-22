@@ -5,4 +5,4 @@ Ventanas de tiempo de esta sesión, no equivalentes a horas humanas ni benchmark
 | Incremento | Inicio UTC | Fin UTC | Duración | Resultado |
 |---|---|---|---|---|
 | Productos (segundo CRUD) | 2026-10-22 19:01:24 | 2026-10-22 19:05:40 | 4 min 16 s | CRUD, unitarias, integración completa, lint/build correctos; extracción aún no iniciada |
-| Extracción compartida de vistas | Pendiente | Pendiente | Pendiente | Solo tras validar ambos CRUD |
+| Extracción compartida de vistas | 2026-10-22 19:06:39 | 2026-10-22 19:13:54 | 7 min 15 s | Componentes compartidos, regresión completa, carreras, navegador, smoke nativo y documentación correctos |

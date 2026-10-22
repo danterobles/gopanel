@@ -46,8 +46,12 @@ En recursos ajenos, el contrato es 404 genérico. Cuando la acción está prohib
 
 ## Evidencia de clientes (etapa 5)
 
-[Validación de etapa 5](validacion-etapa-5.md) registra pruebas unitarias de campos/parsers/UUID y cinco pruebas de integración HTTP/servicio nuevas, además de regresión SQL existente. Incluye Owner/Admin permitidos, Viewer denegado en HTTP manual, operador sin membresía sin acceso comercial, IDs ajenos/inexistentes/malformados/eliminados, CSRF/origen/límite de cuerpo, Unicode/NULL/escape HTML, orden/filtros/paginación y rollback de auditoría. Prueba concurrente verifica que degradar a Viewer mientras espera una edición impida esa edición. US-05 de productos permanece en etapa 6.
+[Validación de etapa 5](validacion-etapa-5.md) registra pruebas unitarias de campos/parsers/UUID y cinco pruebas de integración HTTP/servicio nuevas, además de regresión SQL existente. Incluye Owner/Admin permitidos, Viewer denegado en HTTP manual, operador sin membresía sin acceso comercial, IDs ajenos/inexistentes/malformados/eliminados, CSRF/origen/límite de cuerpo, Unicode/NULL/escape HTML, orden/filtros/paginación y rollback de auditoría. Prueba concurrente verifica que degradar a Viewer mientras espera una edición impida esa edición. US-05 de productos se valida en etapa 6.
 
 ## Registro de ejecución
 
 Cada cierre de tarea debe citar historias/casos cubiertos, comando y resultado, limitaciones, migraciones/rollback y commit. Una prueba planificada, una revisión de código o la compilación por sí sola no equivalen a aceptar una historia.
+
+## Evidencia de productos y extracción (etapa 6)
+
+[Validación de etapa 6](validacion-etapa-6.md) registra US-05/06: tres pruebas unitarias y cuatro pruebas de integración nuevas, además de la regresión completa de clientes. Incluye SKU equivalente por collation y concurrente, repetición entre empresas, reutilización tras baja, precio exacto y límite BIGINT, filtros/seis órdenes/páginas, autorización/IDOR/CSRF, rollback de auditoría y degradación concurrente del rol. Ambas baterías pasan después de extraer los componentes visuales compartidos, también con detector de carreras. Navegador verifica creación/edición, validación monetaria, confirmación, orden/paginación, Viewer y navegación entre módulos; el cierre operativo E2E/carga y el benchmark siguen en etapa 8.

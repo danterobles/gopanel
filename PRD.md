@@ -1,6 +1,6 @@
 # PRD — GoPanel Pilot
 
-**Versión:** 1.6 · **Estado:** CRUD de productos implementado; extracción de etapa 6 en curso · **Producto:** SaaS administrativo multiempresa de referencia
+**Versión:** 1.6 · **Estado:** Etapa 6 completa: productos y componentes compartidos validados · **Producto:** SaaS administrativo multiempresa de referencia
 
 Contratos conciliados en [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). Seguimiento: [plan por etapas](docs/plan-de-implementacion.md), [matriz de aceptación](docs/matriz-de-aceptacion.md) y [decisiones pendientes](docs/decisiones-pendientes.md).
 

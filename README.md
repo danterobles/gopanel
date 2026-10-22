@@ -1,6 +1,6 @@
 # GoPanel Pilot
 
-SaaS administrativo multiempresa en construcción. Etapas 0–5: bootstrap, persistencia, identidad, permisos, miembros y CRUD de clientes. El desarrollo local usa Go, Node y MySQL nativos. Productos, dashboard y SSE HTTP siguen en las etapas siguientes.
+SaaS administrativo multiempresa en construcción. Etapas 0–6: bootstrap, persistencia, identidad, permisos, miembros, CRUD de clientes/productos y componentes Templ compartidos. El desarrollo local usa Go, Node y MySQL nativos. Dashboard y SSE HTTP siguen en la etapa 7.
 
 ## Arranque nativo
 
@@ -117,11 +117,23 @@ Los listados administrativos muestran 25 filas por página. Validación 422, per
 
 Entrar con Owner/Admin, seleccionar empresa y abrir **Clientes** desde `/app`. **Nuevo cliente** permite crear; **Ver detalle** ofrece edición y confirmación de baja lógica. Viewer consulta sin botones de mutación y recibe 403 si intenta POST manual. Datos ajenos, ausentes, eliminados o IDs malformados reciben el mismo 404. La baja no tiene restauración desde la interfaz.
 
-Nombre y estado son obligatorios. Correo, teléfono y notas son opcionales; vacíos se guardan como NULL. Nombre hasta 180 caracteres Unicode, correo simple hasta 254 bytes (trim/minúsculas), teléfono libre hasta 40 caracteres y notas hasta 5000 con saltos LF. No se impone unicidad de correo de clientes ni un país para teléfonos. Errores por campo conservan valores/foco; el servidor rechaza UTF-8 inválido y controles no permitidos. Cuerpo de formulario de clientes limitado a 64 KiB; los demás mantienen 16 KiB.
+Nombre y estado son obligatorios. Correo, teléfono y notas son opcionales; vacíos se guardan como NULL. Nombre hasta 180 caracteres Unicode, correo simple hasta 254 bytes (trim/minúsculas), teléfono libre hasta 40 caracteres y notas hasta 5000 con saltos LF. No se impone unicidad de correo de clientes ni un país para teléfonos. Errores por campo conservan valores/foco; el servidor rechaza UTF-8 inválido y controles no permitidos. Cuerpo de formulario de clientes y productos limitado a 64 KiB; autenticación y administración mantienen 16 KiB.
 
 Listado con búsqueda literal por nombre/correo, estado, nombre A–Z/Z–A o fecha reciente/antigua y páginas de 10/25/50. Por ejemplo, `/app/customers?search=Cliente&status=active&sort=name_asc&page=1&page_size=10`. Filtros y paginación conservan sus parámetros en la URL. Todos los flujos tienen HTML completo sin HTMX; con HTMX intercambian fragmentos y actualizan la URL sin recarga completa. Cambio y auditoría se confirman en una misma transacción; no hay migraciones nuevas.
 
-Contrato y validación: [ADR-0006](docs/adr/0006-clientes-validacion-y-flujos-http.md) y [etapa 5](docs/validacion-etapa-5.md). Todavía no se extraen componentes genéricos de recursos: se hará después del CRUD de productos.
+Contrato y validación: [ADR-0006](docs/adr/0006-clientes-validacion-y-flujos-http.md), [etapa 5](docs/validacion-etapa-5.md) y [etapa 6](docs/validacion-etapa-6.md). Tras validar ambos CRUD se compartieron layout, navegación, campos, formularios, avisos, tabla y paginación en `internal/ui/components/resource.templ`. Las filas, campos específicos, validación, permisos y SQL permanecen en cada dominio.
+
+## Productos
+
+Owner/Admin pueden abrir **Productos** desde `/app`, crear, consultar, editar y confirmar la baja lógica. Viewer consulta; el servidor rechaza sus mutaciones. Cada operación queda acotada a la empresa activa y comparte transacción con su auditoría.
+
+SKU y nombre son obligatorios (hasta 80 y 180 caracteres Unicode). SKU conserva caso/acentos tras trim; el índice MySQL impide equivalentes dentro de una empresa, incluso concurrentemente, y permite repetirlo en otra empresa o reutilizarlo tras una baja. Un duplicado devuelve 422 junto al campo. Descripción opcional hasta 5000 caracteres; estado activo/inactivo.
+
+Precio en MXN, por ejemplo `1250.50`, sin separadores de miles, signos ni exponentes y con máximo dos decimales. Se convierte a centavos enteros sin float ni redondeo; límite `92233720368547758.07`. La moneda del MVP es MXN.
+
+Búsqueda literal por SKU/nombre, filtro por estado y orden por nombre, fecha o precio en ambas direcciones. Páginas de 10/25/50. Ejemplo: `/app/products?search=SKU&status=active&sort=price_asc&page=1&page_size=10`. HTML completo y fragmentos HTMX con validación visible y URL navegable. Sin migraciones nuevas.
+
+Contrato: [ADR-0007](docs/adr/0007-productos-sku-precios-y-extraccion.md). Pruebas y extracción: [validación de etapa 6](docs/validacion-etapa-6.md); tiempos separados en [registro de esfuerzo](docs/registro-de-esfuerzo.md).
 
 ## Alternativa Compose
 
@@ -138,6 +150,6 @@ CI está preparado para generación reproducible, formato/vet, tests, integraci�
 
 ## Seguimiento
 
-Leer [PRD](PRD.md), [arquitectura](ARQUITECTURA.md), [datos](DATA.md), [AGENTS](AGENTS.md), [plan](docs/plan-de-implementacion.md) y [aceptación](docs/matriz-de-aceptacion.md). Decisiones: [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md), [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md), [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md), [ADR-0006](docs/adr/0006-clientes-validacion-y-flujos-http.md), [pendientes](docs/decisiones-pendientes.md). Evidencia: [etapa 1](docs/validacion-etapa-1.md) [etapa 2](docs/validacion-etapa-2.md) [etapa 3](docs/validacion-etapa-3.md) [etapa 4](docs/validacion-etapa-4.md) y [etapa 5](docs/validacion-etapa-5.md).
+Leer [PRD](PRD.md), [arquitectura](ARQUITECTURA.md), [datos](DATA.md), [AGENTS](AGENTS.md), [plan](docs/plan-de-implementacion.md) y [aceptación](docs/matriz-de-aceptacion.md). Decisiones: [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md), [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md), [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md), [ADR-0006](docs/adr/0006-clientes-validacion-y-flujos-http.md), [ADR-0007](docs/adr/0007-productos-sku-precios-y-extraccion.md), [pendientes](docs/decisiones-pendientes.md). Evidencia: [etapa 1](docs/validacion-etapa-1.md) [etapa 2](docs/validacion-etapa-2.md) [etapa 3](docs/validacion-etapa-3.md) [etapa 4](docs/validacion-etapa-4.md) [etapa 5](docs/validacion-etapa-5.md) y [etapa 6](docs/validacion-etapa-6.md).
 
-Siguiente etapa: productos/SKU, medición de esfuerzo del segundo CRUD y extracción de componentes después de validar ambos recursos. TLS/proxy y operación pública siguen en D-09.
+Siguiente etapa: 7, dashboard y SSE con broker en memoria; cerrar primero D-07/D-08. TLS/proxy y operación pública siguen en D-09.

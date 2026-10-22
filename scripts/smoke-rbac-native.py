@@ -84,6 +84,8 @@ with tempfile.TemporaryFile(mode='w+') as logs:
         request('/app/settings', 403)
         customers = request('/app/customers?search=Cliente&page_size=10&sort=name_asc')
         assert 'Nuevo cliente' in customers and '@norte.test' in customers and '@sur.test' not in customers, 'Admin customer view is not scoped to Norte'
+        products = request('/app/products?page_size=10&sort=price_asc')
+        assert 'Nuevo producto' in products and 'MXN' in products, 'Admin products unavailable'
         request('/app/members', 403, {'csrf_token': token, 'email': 'platform@gopanel.test', 'role': 'viewer'})
         request('/logout', 303, {'csrf_token': token})
         token = login('shared@gopanel.test', 'sur')
@@ -91,12 +93,16 @@ with tempfile.TemporaryFile(mode='w+') as logs:
         customers = request('/app/customers?page_size=10')
         assert 'Nuevo cliente' not in customers and '@sur.test' in customers and '@norte.test' not in customers, 'Viewer customer view is not scoped to Sur'
         request('/app/customers/new', 403, {'csrf_token': token, 'name': 'must not create', 'status': 'active', 'role': 'owner'})
+        products = request('/app/products?page_size=10')
+        assert 'Nuevo producto' not in products and 'MXN' in products, 'Viewer product controls are not protected'
+        request('/app/products/new', 403, {'csrf_token': token, 'sku': 'MUST-NOT-CREATE', 'name': 'forged', 'price': '1.00', 'currency': 'MXN', 'status': 'active'})
         request('/logout', 303, {'csrf_token': token})
         token = login('owner.norte@gopanel.test', 'norte')
         body = request('/app/members')
         assert 'Agregar miembro existente' in body, 'Owner cannot manage members'
         request('/app/settings')
         request('/app/customers/new')
+        request('/app/products/new')
         request('/app/settings', 403, {'name': 'must not apply'})
         request('/logout', 303, {'csrf_token': token})
         token = login('platform@gopanel.test')
@@ -119,4 +125,4 @@ with tempfile.TemporaryFile(mode='w+') as logs:
         assert not secret or secret not in output, 'credential appeared in logs'
     for line in output.splitlines():
         json.loads(line)
-print('OK: native Owner/Admin/Viewer, tenant-scoped customers, independent platform access, CSRF and HTML management pages; business data unchanged')
+print('OK: native Owner/Admin/Viewer, tenant-scoped customers/products, independent platform access, CSRF and HTML management pages; business data unchanged')

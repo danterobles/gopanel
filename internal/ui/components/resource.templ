@@ -1,0 +1,105 @@
+package components
+
+import "strconv"
+import "strings"
+
+templ ResourcePage(title, tenant, contentID string, body templ.Component) {
+	<!DOCTYPE html>
+	<html lang="es">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<meta name="htmx-config" content='{"allowEval":false,"allowScriptTags":false,"includeIndicatorStyles":false,"historyCacheSize":0,"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"[45]..","swap":true,"error":true}]}'/>
+			<title>{ title } · GoPanel</title>
+			<link rel="stylesheet" href="/static/app.css"/><script src="/static/htmx.min.js" defer></script>
+		</head>
+		<body class="min-h-screen bg-slate-50 text-slate-900">
+			<a href={ templ.SafeURL("#" + contentID) } class="sr-only focus:not-sr-only">Saltar al contenido</a>
+			<header class="border-b border-slate-200 bg-white px-6 py-4"><div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3"><a href="/app" class="font-bold text-indigo-700 underline">GoPanel Pilot</a><span class="text-sm font-medium">{ tenant }</span><a href="/app/tenants/select" class="text-indigo-700 underline">Cambiar empresa</a></div></header>
+			<main id={ contentID } tabindex="-1" class="mx-auto max-w-6xl px-6 py-8">@body</main>
+		</body>
+	</html>
+}
+
+templ ResourceNav(label, base, target string) {
+	<nav aria-label={ label } class="mb-6 flex flex-wrap gap-5 text-indigo-700 underline">
+		<a href="/app">Empresa activa</a><a href={ templ.SafeURL(base) } hx-get={ base } hx-target={ target } hx-push-url="true">Listado de { strings.ToLower(label) }</a>
+		if base=="/app/customers" {
+			<a href="/app/products">Productos</a>
+		} else {
+			<a href="/app/customers">Clientes</a>
+		}
+	</nav>
+}
+
+templ Success(message string) {
+	if message!="" {
+		<p role="status" class="my-4 rounded border border-green-300 bg-green-50 p-4 text-green-900">{ message }</p>
+	}
+}
+
+templ FieldError(prefix, field string, errors map[string]string) {
+	if errors[field]!="" {
+		<p id={ prefix + "-" + field + "-error" } class="mt-1 text-red-800">{ errors[field] }</p>
+	}
+}
+
+func ErrorID(prefix, field string, errors map[string]string) string {
+	if errors[field] == "" {
+		return ""
+	}
+	return prefix + "-" + field + "-error"
+}
+
+templ TextField(prefix, name, label, value, kind, autocomplete string, maximum int, required bool, errors map[string]string) {
+	<div><label for={ prefix + "-" + name } class="block font-medium">{ label }</label><input id={ prefix + "-" + name } name={ name } type={ kind } value={ value } required?={ required } maxlength={ strconv.Itoa(maximum) } autocomplete={ autocomplete } aria-invalid={ strconv.FormatBool(errors[name] != "") } aria-describedby={ ErrorID(prefix, name, errors) } class="mt-1 w-full rounded border border-slate-400 p-3"/>@FieldError(prefix, name, errors)</div>
+}
+
+templ StateField(prefix, status string, errors map[string]string) {
+	<div><label for={ prefix + "-state" } class="block font-medium">Estado</label><select id={ prefix + "-state" } name="status" required aria-invalid={ strconv.FormatBool(errors["status"] != "") } aria-describedby={ ErrorID(prefix, "status", errors) } class="mt-1 w-full rounded border border-slate-400 bg-white p-3"><option value="" disabled selected?={ status!="active"&&status!="inactive" }>Selecciona un estado</option><option value="active" selected?={ status=="active" }>Activo</option><option value="inactive" selected?={ status=="inactive" }>Inactivo</option></select>@FieldError(prefix, "status", errors)</div>
+}
+
+templ TextAreaField(prefix, name, label, value string, maximum int, errors map[string]string) {
+	<div><label for={ prefix + "-" + name } class="block font-medium">{ label }</label><textarea id={ prefix + "-" + name } name={ name } rows="5" maxlength={ strconv.Itoa(maximum) } aria-invalid={ strconv.FormatBool(errors[name] != "") } aria-describedby={ ErrorID(prefix, name, errors) } class="mt-1 w-full rounded border border-slate-400 p-3">{ value }</textarea>@FieldError(prefix, name, errors)</div>
+}
+
+templ ResourceForm(action, target, csrf string, errors map[string]string) {
+	<form method="post" action={ templ.SafeURL(action) } hx-post={ action } hx-target={ target } hx-swap="innerHTML focus-scroll:true" class="mt-6 max-w-3xl space-y-5 rounded-xl border border-slate-200 bg-white p-6">
+		<input type="hidden" name="csrf_token" value={ csrf }/>
+		if len(errors)>0 {
+			<p role="alert" class="rounded border border-red-300 bg-red-50 p-4 text-red-900">Revisa los campos señalados. No se guardaron cambios.</p>
+		}
+		{ children... }
+	</form>
+}
+
+templ FormActions(prefix, label, base, target string) {
+	<div class="flex flex-wrap items-center gap-4"><button id={ prefix + "-save" } class="rounded bg-indigo-700 px-5 py-3 font-semibold text-white">{ label }</button><span class="htmx-indicator" role="status">Guardando…</span><a href={ templ.SafeURL(base) } hx-get={ base } hx-target={ target } hx-push-url="true" class="text-indigo-700 underline">Cancelar</a></div>
+}
+
+templ ResourceTable(caption string, columns []string) {
+	<div tabindex="0" role="region" aria-label={ "Tabla: " + caption + " con desplazamiento horizontal" } class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+		<table class="w-full text-left">
+			<caption class="sr-only">{ caption }</caption>
+			<thead class="bg-slate-100">
+				<tr>
+					for _,label:=range columns {
+						<th scope="col" class="p-4">{ label }</th>
+					}
+				</tr>
+			</thead><tbody>{ children... }
+</tbody>
+		</table>
+	</div>
+}
+
+templ Pagination(label, base, target, previous, next string) {
+	<nav aria-label={ label } class="my-6 flex flex-wrap gap-6 text-indigo-700 underline">
+		if previous!="" {
+			<a href={ templ.SafeURL(previous) } hx-get={ base + "/table?" + strings.TrimPrefix(previous, base+"?") } hx-target={ target }>Anterior</a>
+		}
+		if next!="" {
+			<a href={ templ.SafeURL(next) } hx-get={ base + "/table?" + strings.TrimPrefix(next, base+"?") } hx-target={ target }>Siguiente</a>
+		}
+	</nav>
+}
