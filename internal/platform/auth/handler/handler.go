@@ -99,7 +99,9 @@ func redirect(w http.ResponseWriter, r *http.Request, path string) {
 	}
 	http.Redirect(w, r, path, http.StatusSeeOther)
 }
-func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, full, fragment templ.Component) {
+
+// Render selects a full document or fragment without changing authorization.
+func (h *Handler) Render(w http.ResponseWriter, r *http.Request, status int, full, fragment templ.Component) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	component := full
@@ -113,7 +115,7 @@ func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, ful
 func (h *Handler) failure(w http.ResponseWriter, r *http.Request) {
 	h.logger.ErrorContext(r.Context(), "auth_operation_failed", "request_id", requestID(w))
 	message := "El servicio no está disponible. Intenta de nuevo en unos momentos."
-	h.render(w, r, 503, pages.AuthError(message), pages.AuthNotice(message))
+	h.Render(w, r, 503, pages.AuthError(message), pages.AuthNotice(message))
 }
 func action(path string) string {
 	switch path {
@@ -134,11 +136,12 @@ func (h *Handler) deny(w http.ResponseWriter, r *http.Request, message string) {
 		h.failure(w, r)
 		return
 	}
-	h.render(w, r, 403, pages.AuthError(message), pages.AuthNotice(message))
+	h.Render(w, r, 403, pages.AuthError(message), pages.AuthNotice(message))
 }
-func (h *Handler) parse(next http.Handler) http.Handler {
+func (h *Handler) parse(next http.Handler) http.Handler { return h.parseLimit(next, 16<<10) }
+func (h *Handler) parseLimit(next http.Handler, limit int64) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
+		r.Body = http.MaxBytesReader(w, r.Body, limit)
 		if err := r.ParseForm(); err != nil {
 			status := 400
 			var large *http.MaxBytesError
@@ -146,7 +149,7 @@ func (h *Handler) parse(next http.Handler) http.Handler {
 				status = 413
 			}
 			message := "El formulario no es válido o excede el tamaño permitido."
-			h.render(w, r, status, pages.AuthError(message), pages.AuthNotice(message))
+			h.Render(w, r, status, pages.AuthError(message), pages.AuthNotice(message))
 			return
 		}
 		next.ServeHTTP(w, r)
@@ -242,7 +245,7 @@ func (h *Handler) loginPage(w http.ResponseWriter, r *http.Request) {
 		csrf = base64.RawURLEncoding.EncodeToString(raw)
 	}
 	http.SetCookie(w, h.cookie(h.csrfName(), csrf, time.Now().Add(time.Hour)))
-	h.render(w, r, 200, pages.LoginPage(csrf, "", ""), pages.LoginForm(csrf, "", ""))
+	h.Render(w, r, 200, pages.LoginPage(csrf, "", ""), pages.LoginForm(csrf, "", ""))
 }
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	email := strings.ToLower(strings.TrimSpace(r.PostForm.Get("email")))
@@ -251,7 +254,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	address, err := mail.ParseAddress(email)
 	if len(email) > 254 || err != nil || address.Address != email || len(value) == 0 || len(value) > 1024 {
 		message := "Ingresa un correo válido y una contraseña de hasta 1024 caracteres."
-		h.render(w, r, 422, pages.LoginPage(csrf, email, message), pages.LoginForm(csrf, email, message))
+		h.Render(w, r, 422, pages.LoginPage(csrf, email, message), pages.LoginForm(csrf, email, message))
 		return
 	}
 	ip, _, err := net.SplitHostPort(r.RemoteAddr)
@@ -261,13 +264,13 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	issued, err := h.service.Login(r.Context(), email, value, h.token(r), ip, requestID(w))
 	if errors.Is(err, auth.ErrCredentials) {
 		message := "Correo o contraseña incorrectos."
-		h.render(w, r, 401, pages.LoginPage(csrf, email, message), pages.LoginForm(csrf, email, message))
+		h.Render(w, r, 401, pages.LoginPage(csrf, email, message), pages.LoginForm(csrf, email, message))
 		return
 	}
 	if errors.Is(err, auth.ErrLimited) || errors.Is(err, auth.ErrBusy) {
 		w.Header().Set("Retry-After", "60")
 		message := "Demasiados intentos. Espera un minuto antes de volver a intentar."
-		h.render(w, r, 429, pages.LoginPage(csrf, email, message), pages.LoginForm(csrf, email, message))
+		h.Render(w, r, 429, pages.LoginPage(csrf, email, message), pages.LoginForm(csrf, email, message))
 		return
 	}
 	if err != nil {
@@ -291,7 +294,7 @@ func (h *Handler) selectResponse(w http.ResponseWriter, r *http.Request, status 
 		h.failure(w, r)
 		return
 	}
-	h.render(w, r, status, pages.TenantPage(p.CSRF(), rows, message, platform), pages.TenantForm(p.CSRF(), rows, message))
+	h.Render(w, r, status, pages.TenantPage(p.CSRF(), rows, message, platform), pages.TenantForm(p.CSRF(), rows, message))
 }
 func (h *Handler) activate(w http.ResponseWriter, r *http.Request) {
 	p := principal(r)
@@ -330,5 +333,5 @@ func (h *Handler) app(w http.ResponseWriter, r *http.Request) {
 	actor, _ := tenancy.Actor(r.Context())
 	p := principal(r)
 	component := pages.ActiveTenant(p.CSRF(), actor.TenantName, actor.Role, rbac.Can(actor.Role, rbac.MembersRead), rbac.Can(actor.Role, rbac.TenantSettings))
-	h.render(w, r, 200, component, component)
+	h.Render(w, r, 200, component, component)
 }

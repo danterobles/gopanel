@@ -10,7 +10,13 @@ SELECT id,tenant_id,name,email,phone,status,notes,created_at,updated_at,deleted_
 FROM customers WHERE tenant_id=sqlc.arg(tenant_id) AND deleted_at IS NULL
 AND (sqlc.arg(status)='' OR status=sqlc.arg(status))
 AND (sqlc.arg(search)='' OR name LIKE CONCAT('%',sqlc.arg(search),'%') ESCAPE '=' OR COALESCE(email,'') LIKE CONCAT('%',sqlc.arg(search),'%') ESCAPE '=')
-ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?;
+ORDER BY
+ CASE WHEN sqlc.arg(sort)='name_asc' THEN name END ASC,
+ CASE WHEN sqlc.arg(sort)='name_desc' THEN name END DESC,
+ CASE WHEN sqlc.arg(sort)='created_asc' THEN created_at END ASC,
+ CASE WHEN sqlc.arg(sort)='created_desc' THEN created_at END DESC,
+ CASE WHEN (sqlc.arg(sort)='name_asc' OR sqlc.arg(sort)='created_asc') THEN id END ASC,
+ id DESC LIMIT ? OFFSET ?;
 
 -- name: CountCustomers :one
 SELECT COUNT(*) FROM customers WHERE tenant_id=sqlc.arg(tenant_id) AND deleted_at IS NULL

@@ -95,6 +95,7 @@ templ ActiveTenant(csrf, name, role string, members, settings bool) {
    <h2 class="text-xl font-semibold">{ name }</h2>
    <p class="mt-2">Rol de tu membresía: <strong>{ role }</strong></p>
    <nav aria-label="Módulos" class="mt-5 flex gap-4 text-indigo-700 underline">
+ <a href="/app/customers">Clientes</a>
  if members {
  <a href="/app/members">Miembros</a>
  }

@@ -114,13 +114,20 @@ SELECT id,tenant_id,name,email,phone,status,notes,created_at,updated_at,deleted_
 FROM customers WHERE tenant_id=? AND deleted_at IS NULL
 AND (?='' OR status=?)
 AND (?='' OR name LIKE CONCAT('%',?,'%') ESCAPE '=' OR COALESCE(email,'') LIKE CONCAT('%',?,'%') ESCAPE '=')
-ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?
+ORDER BY
+ CASE WHEN ?='name_asc' THEN name END ASC,
+ CASE WHEN ?='name_desc' THEN name END DESC,
+ CASE WHEN ?='created_asc' THEN created_at END ASC,
+ CASE WHEN ?='created_desc' THEN created_at END DESC,
+ CASE WHEN (?='name_asc' OR ?='created_asc') THEN id END ASC,
+ id DESC LIMIT ? OFFSET ?
 `
 
 type ListCustomersParams struct {
 	TenantID string
 	Status   string
 	Search   interface{}
+	Sort     interface{}
 	Limit    int32
 	Offset   int32
 }
@@ -133,6 +140,12 @@ func (q *Queries) ListCustomers(ctx context.Context, arg ListCustomersParams) ([
 		arg.Search,
 		arg.Search,
 		arg.Search,
+		arg.Sort,
+		arg.Sort,
+		arg.Sort,
+		arg.Sort,
+		arg.Sort,
+		arg.Sort,
 		arg.Limit,
 		arg.Offset,
 	)

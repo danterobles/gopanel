@@ -1,6 +1,6 @@
 # ARQUITECTURA — GoPanel Pilot
 
-**Versión:** 1.3 · **Estilo:** monolito modular server-rendered
+**Versión:** 1.4 · **Estilo:** monolito modular server-rendered
 
 Conciliación de contratos: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). Las decisiones aún no tomadas se registran en [decisiones pendientes](docs/decisiones-pendientes.md).
 
@@ -83,6 +83,12 @@ Makefile
 ### Mutación
 `POST /app/customers/new` -> sesión + CSRF + tenant + permiso -> parseo/validación -> servicio/transacción -> auditoría -> respuesta 303 (HTML normal) o fragmento/headers HTMX según contrato. Nunca confiar en campos de control del cliente.
 
+### Clientes implementados (etapa 5)
+
+[ADR-0006](docs/adr/0006-clientes-validacion-y-flujos-http.md) fija campos y flujos. GET normal devuelve documento completo; HTMX recibe contenido del módulo o solo resultados en `/table`. HX-Push-Url mantiene URL canónica con filtros y paginación. Creación HTMX devuelve 201 + detalle; edición 200 + detalle; baja 200 + listado consultado de MySQL. POST normal devuelve 303. Validación 422 devuelve formulario con valores/errores por campo. GET de baja confirma; POST valida confirmación y CSRF. Sin JavaScript de aplicación adicional.
+
+`internal/modules/customers/{input.go,service.go,handler/,repository/}` separa validación, autorización/transacción, HTTP y SQL. Lecturas usan snapshot consistente; mutaciones bloquean tenant para coordinarse con cambios de miembros. Repositorios acotan UUID y tenant antes de acceder al recurso; errores internos 503 sin SQL ni datos de formulario. El layout amplio de clientes es específico; extracción compartida tras productos. El límite de cuerpo de clientes es 64 KiB por notas Unicode codificadas; autenticación/miembros/plataforma conservan 16 KiB.
+
 ### Tiempo real
 Mutación confirmada -> publicar evento interno `{type, tenant_id, resource, version}` -> broker en memoria -> SSE `GET /app/events` autenticado y vinculado a tenant -> navegador recibe solo `{type, resource, version}` -> HTMX vuelve a solicitar widget/tabla. No incluir PII ni entidades completas. `version` no garantiza reproducción duradera ni orden global.
 
@@ -99,7 +105,7 @@ Mutación confirmada -> publicar evento interno `{type, tenant_id, resource, ver
 | GET/POST | `/app/customers/new` | `customers.create` |
 | GET | `/app/customers/{id}` | `customers.read` |
 | GET/POST | `/app/customers/{id}/edit` | `customers.update` |
-| POST | `/app/customers/{id}/delete` | `customers.delete` |
+| GET/POST | `/app/customers/{id}/delete` | `customers.delete` |
 | GET | `/app/products` | `products.read` |
 | GET | `/app/products/table` | `products.read` |
 | GET/POST | `/app/products/new` | `products.create` |

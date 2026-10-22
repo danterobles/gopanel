@@ -2,7 +2,7 @@
 
 Fuente: PRD, ARQUITECTURA y DATA conciliados mediante [ADR-0001](adr/0001-conciliacion-de-contratos-poc.md). Fecha: 2026-10-21.
 
-Esta matriz define escenarios objetivo. La etapa 0 revisó trazabilidad; etapas 1 y 2 aportan evidencia parcial en [validación de etapa 1](validacion-etapa-1.md) y [validación de etapa 2](validacion-etapa-2.md). Se ejecutaron pruebas de bootstrap y persistencia/aislamiento SQL, constraints, transacciones, sesiones persistidas y concurrencia del último Owner. Etapa 3 añade [evidencia de login/logout, CSRF y selección de empresa](validacion-etapa-3.md), con HTTP normal/HTMX y reinicio real del proceso. Etapa 4 aporta [RBAC, miembros, configuración y plataforma](validacion-etapa-4.md): matriz tabular, HTTP manual normal/HTMX, concurrencia de Owners, revocación y rollback de auditoría; smoke nativo y revisión de navegador con teclado/escritorio/tablet. CRUD E2E, dashboard y SSE siguen planificados. La aceptación completa de una historia requiere todos sus escenarios y los criterios generales de AGENTS; las pruebas SQL no sustituyen las de HTTP.
+Esta matriz define escenarios objetivo. La etapa 0 revisó trazabilidad; etapas 1 y 2 aportan evidencia parcial en [validación de etapa 1](validacion-etapa-1.md) y [validación de etapa 2](validacion-etapa-2.md). Se ejecutaron pruebas de bootstrap y persistencia/aislamiento SQL, constraints, transacciones, sesiones persistidas y concurrencia del último Owner. Etapa 3 añade [evidencia de login/logout, CSRF y selección de empresa](validacion-etapa-3.md), con HTTP normal/HTMX y reinicio real del proceso. Etapa 4 aporta [RBAC, miembros, configuración y plataforma](validacion-etapa-4.md): matriz tabular, HTTP manual normal/HTMX, concurrencia de Owners, revocación y rollback de auditoría; smoke nativo y revisión de navegador con teclado/escritorio/tablet. Etapa 5 añade [evidencia de clientes](validacion-etapa-5.md): US-04 y parte de clientes de US-05, CRUD HTML/HTMX, aislamiento, filtros, orden, paginación y auditoría; recorrido de navegador con datos desechables. Productos, dashboard, SSE y batería E2E operativa integral siguen planificados. La aceptación completa de una historia requiere todos sus escenarios y los criterios generales de AGENTS; las pruebas SQL no sustituyen las de HTTP.
 
 ## Datos y niveles
 
@@ -43,6 +43,10 @@ En recursos ajenos, el contrato es 404 genérico. Cuando la acción está prohib
 | Operación | Arranque desde cero con Compose, apagado ordenado, reinicio con sesiones válidas, backup/restauración ensayada y runbook / 1–8 |
 | Rendimiento | Dataset 10 000/tenant, 25 filas/página, 50 usuarios concurrentes; p50/p95, RPS, CPU/memoria y entorno documentados; evaluar meta p95 < 300 ms / 8 |
 | Comparación | Medir segundo CRUD y extracción por separado; comparación Laravel/Filament equivalente según D-10, sin conclusiones si falta contraparte / 5–8 |
+
+## Evidencia de clientes (etapa 5)
+
+[Validación de etapa 5](validacion-etapa-5.md) registra pruebas unitarias de campos/parsers/UUID y cinco pruebas de integración HTTP/servicio nuevas, además de regresión SQL existente. Incluye Owner/Admin permitidos, Viewer denegado en HTTP manual, operador sin membresía sin acceso comercial, IDs ajenos/inexistentes/malformados/eliminados, CSRF/origen/límite de cuerpo, Unicode/NULL/escape HTML, orden/filtros/paginación y rollback de auditoría. Prueba concurrente verifica que degradar a Viewer mientras espera una edición impida esa edición. US-05 de productos permanece en etapa 6.
 
 ## Registro de ejecución
 

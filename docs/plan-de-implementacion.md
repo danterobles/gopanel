@@ -1,6 +1,6 @@
 # Plan de implementación por etapas
 
-Etapas 0–4 autorizadas. Fecha: 2026-10-21. La etapa 4 incorpora permisos por membresía, gestión de miembros, configuración y administración mínima de empresas sobre MySQL nativo. No se inicia etapa 5 en esta entrega. Las fases orientativas del PRD agrupan estas etapas; estimación sujeta a evidencia.
+Etapas 0–5 autorizadas. Fecha: 2026-10-21. La etapa 5 incorpora CRUD de clientes y flujos HTML/HTMX sobre MySQL nativo. No se inicia etapa 6 en esta entrega. Las fases orientativas del PRD agrupan estas etapas; estimación sujeta a evidencia.
 
 Evidencia de bootstrap: [validación de etapa 1](validacion-etapa-1.md). La ejecución remota de CI queda pendiente; no se confunde con las comprobaciones locales.
 
@@ -33,4 +33,4 @@ Evidencia de bootstrap: [validación de etapa 1](validacion-etapa-1.md). La ejec
 - La ausencia de contraparte Laravel/Filament impide concluir el benchmark comparativo, aunque permite medir Go.
 - Valores de política y herramientas todavía abiertos tienen etapas límite en [decisiones pendientes](decisiones-pendientes.md); no bloquean documentación ni trabajo independiente.
 
-Etapas 0–4 completadas localmente. D-04/D-05 cerradas por ADR-0005; evidencia en [validación de etapa 4](validacion-etapa-4.md). La siguiente tarea recomendada es etapa 5: CRUD de clientes y cierre de D-06 para esos campos. La ejecución remota de CI y la validación operativa integral siguen pendientes.
+Etapas 0–5 completadas localmente. D-04/D-05 cerradas por ADR-0005; D-06 para clientes por ADR-0006. Evidencia en [validación de etapa 5](validacion-etapa-5.md). Siguiente tarea: etapa 6, productos/SKU y extracción después de validar ambos CRUD. Registrar por separado tiempo del segundo CRUD y de la extracción. La ejecución remota de CI y la validación operativa integral siguen pendientes.

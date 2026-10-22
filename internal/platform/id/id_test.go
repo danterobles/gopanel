@@ -16,3 +16,16 @@ func TestUUIDv4(t *testing.T) {
 		seen[value] = true
 	}
 }
+
+func TestCanonicalUUIDValidation(t *testing.T) {
+	for _, value := range []string{New(), "00000000-0000-4000-8000-000000000000", "ffffffff-ffff-4fff-bfff-ffffffffffff"} {
+		if !Valid(value) {
+			t.Errorf("valid UUID rejected: %s", value)
+		}
+	}
+	for _, value := range []string{"", "not-a-uuid", "😀", "FFFFFFFF-FFFF-4FFF-BFFF-FFFFFFFFFFFF", "00000000-0000-1000-8000-000000000000", "00000000-0000-4000-c000-000000000000", "00000000_0000-4000-8000-000000000000", "00000000-0000-4000-8000-000000000000x"} {
+		if Valid(value) {
+			t.Errorf("malformed UUID accepted: %s", value)
+		}
+	}
+}

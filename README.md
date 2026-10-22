@@ -1,6 +1,6 @@
 # GoPanel Pilot
 
-SaaS administrativo multiempresa en construcción. Etapas 0–4: bootstrap, persistencia, identidad, permisos y miembros multiempresa. El desarrollo local usa Go, Node y MySQL nativos. El CRUD HTTP de clientes/productos sigue en las etapas siguientes.
+SaaS administrativo multiempresa en construcción. Etapas 0–5: bootstrap, persistencia, identidad, permisos, miembros y CRUD de clientes. El desarrollo local usa Go, Node y MySQL nativos. Productos, dashboard y SSE HTTP siguen en las etapas siguientes.
 
 ## Arranque nativo
 
@@ -52,7 +52,7 @@ Para carga, usar `SEED_COUNT=10000 make seed` sobre una base de desarrollo vací
 | `make test` | Unitarias y HTTP sin requerir MySQL externo |
 | `make test-integration` | MySQL real; crea/elimina únicamente bases aleatorias `gopanel_test_*`, nunca resetea la base de trabajo |
 | `make build` | Compilar `bin/gopanel` sin CGO |
-| `make smoke-rbac` | Proceso Go nativo temporal: Owner/Admin/Viewer, panel de plataforma y CSRF con seeds privados; no cambia datos de negocio |
+| `make smoke-rbac` | Proceso Go nativo temporal: Owner/Admin/Viewer, clientes aislados por empresa, panel de plataforma y CSRF con seeds privados; no cambia datos de negocio |
 | `make smoke-auth` | Login con el usuario compartido del archivo seed privado, selección/cambio de empresa y logout a través de un reinicio real del proceso Go; requiere seed y migraciones aplicadas mediante `make migrate-up` |
 | `make smoke` | Ejecutar procesos Go temporales en puertos libres; verificar assets, health y SIGTERM. Simula fallo de conexión con un endpoint inalcanzable, sin detener MySQL |
 | `make migrate-up`, `make migrate-down` | Aplicar pendientes o revertir una versión con protección explícita |
@@ -113,6 +113,16 @@ Owner puede cambiar el nombre desde `/app/settings`. El slug no se modifica. La 
 
 Los listados administrativos muestran 25 filas por página. Validación 422, permiso denegado 403, recurso ajeno/ausente 404 y conflicto del último Owner 409; HTMX muestra errores junto al formulario sin perder valores ni foco. Mutación, auditoría de éxito y revocación comparten transacción. No se registran correos, nombres ni tokens en auditoría. Sin cambios de esquema ni migraciones nuevas. Contrato detallado: [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md).
 
+## Clientes
+
+Entrar con Owner/Admin, seleccionar empresa y abrir **Clientes** desde `/app`. **Nuevo cliente** permite crear; **Ver detalle** ofrece edición y confirmación de baja lógica. Viewer consulta sin botones de mutación y recibe 403 si intenta POST manual. Datos ajenos, ausentes, eliminados o IDs malformados reciben el mismo 404. La baja no tiene restauración desde la interfaz.
+
+Nombre y estado son obligatorios. Correo, teléfono y notas son opcionales; vacíos se guardan como NULL. Nombre hasta 180 caracteres Unicode, correo simple hasta 254 bytes (trim/minúsculas), teléfono libre hasta 40 caracteres y notas hasta 5000 con saltos LF. No se impone unicidad de correo de clientes ni un país para teléfonos. Errores por campo conservan valores/foco; el servidor rechaza UTF-8 inválido y controles no permitidos. Cuerpo de formulario de clientes limitado a 64 KiB; los demás mantienen 16 KiB.
+
+Listado con búsqueda literal por nombre/correo, estado, nombre A–Z/Z–A o fecha reciente/antigua y páginas de 10/25/50. Por ejemplo, `/app/customers?search=Cliente&status=active&sort=name_asc&page=1&page_size=10`. Filtros y paginación conservan sus parámetros en la URL. Todos los flujos tienen HTML completo sin HTMX; con HTMX intercambian fragmentos y actualizan la URL sin recarga completa. Cambio y auditoría se confirman en una misma transacción; no hay migraciones nuevas.
+
+Contrato y validación: [ADR-0006](docs/adr/0006-clientes-validacion-y-flujos-http.md) y [etapa 5](docs/validacion-etapa-5.md). Todavía no se extraen componentes genéricos de recursos: se hará después del CRUD de productos.
+
 ## Alternativa Compose
 
 Se conserva para reproducibilidad, sin usarla para validar esta etapa local. Copiar `.env.compose.example` a `.env.compose` y definir contraseñas privadas distintas; no reutilizar el `.env` nativo de root como `MYSQL_USER` del contenedor. El ejemplo usa MySQL 13306 para evitar colisionar con el servidor local.
@@ -128,6 +138,6 @@ CI está preparado para generación reproducible, formato/vet, tests, integraci�
 
 ## Seguimiento
 
-Leer [PRD](PRD.md), [arquitectura](ARQUITECTURA.md), [datos](DATA.md), [AGENTS](AGENTS.md), [plan](docs/plan-de-implementacion.md) y [aceptación](docs/matriz-de-aceptacion.md). Decisiones: [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md), [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md), [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md), [pendientes](docs/decisiones-pendientes.md). Evidencia: [etapa 1](docs/validacion-etapa-1.md) [etapa 2](docs/validacion-etapa-2.md) [etapa 3](docs/validacion-etapa-3.md) y [etapa 4](docs/validacion-etapa-4.md).
+Leer [PRD](PRD.md), [arquitectura](ARQUITECTURA.md), [datos](DATA.md), [AGENTS](AGENTS.md), [plan](docs/plan-de-implementacion.md) y [aceptación](docs/matriz-de-aceptacion.md). Decisiones: [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md), [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md), [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md), [ADR-0006](docs/adr/0006-clientes-validacion-y-flujos-http.md), [pendientes](docs/decisiones-pendientes.md). Evidencia: [etapa 1](docs/validacion-etapa-1.md) [etapa 2](docs/validacion-etapa-2.md) [etapa 3](docs/validacion-etapa-3.md) [etapa 4](docs/validacion-etapa-4.md) y [etapa 5](docs/validacion-etapa-5.md).
 
-Siguiente etapa: CRUD de clientes, validación de campos y cierre de D-06 para clientes. TLS/proxy y operación pública siguen en D-09.
+Siguiente etapa: productos/SKU, medición de esfuerzo del segundo CRUD y extracción de componentes después de validar ambos recursos. TLS/proxy y operación pública siguen en D-09.

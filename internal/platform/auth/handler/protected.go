@@ -24,18 +24,27 @@ func (h *Handler) Protected(r chi.Router, tenant bool, routes func(chi.Router)) 
 func (h *Handler) Mutation(next http.Handler) http.Handler {
 	return h.origin.Handler(h.parse(h.sessionCSRF(next)))
 }
+
+// MutationWithLimit uses the same origin/CSRF policy with a module-specific body bound.
+func (h *Handler) MutationWithLimit(limit int64) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return h.origin.Handler(h.parseLimit(h.sessionCSRF(next), limit))
+	}
+}
 func CSRF(r *http.Request) string                                  { return principal(r).CSRF() }
 func UserID(r *http.Request) string                                { return principal(r).UserID() }
 func Redirect(w http.ResponseWriter, r *http.Request, path string) { redirect(w, r, path) }
 func (h *Handler) View(w http.ResponseWriter, r *http.Request, status int, title string, body templ.Component) {
-	h.render(w, r, status, pages.ProtectedPage(title, body), body)
+	h.Render(w, r, status, pages.ProtectedPage(title, body), body)
 }
 func (h *Handler) Problem(w http.ResponseWriter, r *http.Request, status int, message string) {
-	h.render(w, r, status, pages.ProtectedPage("No se pudo completar la solicitud", pages.OperationNotice(message)), pages.OperationNotice(message))
+	h.Render(w, r, status, pages.ProtectedPage("No se pudo completar la solicitud", pages.OperationNotice(message)), pages.OperationNotice(message))
 }
 func (h *Handler) Unavailable(w http.ResponseWriter, r *http.Request) { h.failure(w, r) }
 func mutationAction(path string) string {
 	switch {
+	case strings.HasPrefix(path, "/app/customers"):
+		return "customers.csrf"
 	case strings.HasPrefix(path, "/app/members"):
 		return "memberships.csrf"
 	case path == "/app/settings":

@@ -1,6 +1,6 @@
 # DATA — Modelo de datos GoPanel Pilot
 
-**Versión:** 1.4 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
+**Versión:** 1.5 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
 
 Conciliación: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). El esquema SQL de referencia se implementó en `migrations/000001_initial.up.sql` durante etapa 2; rollback separado y operación nativa según [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md).
 
@@ -159,6 +159,14 @@ ORDER BY created_at DESC, id DESC
 LIMIT ? OFFSET ?;
 ```
 Con sqlc 1.31.1/MySQL, `sqlc.arg` funciona en filtros; LIMIT/OFFSET requieren placeholders posicionales `?`. El repositorio escapa `=`, `%` y `_` usando `=` como carácter de escape explícito; la barra invertida se conserva literalmente como parte del parámetro. Para orden dinámico, seleccionar entre consultas/columnas allowlisted; nunca interpolar el parámetro `sort` recibido.
+
+### Contrato de clientes implementado en etapa 5
+
+Ver [ADR-0006](docs/adr/0006-clientes-validacion-y-flujos-http.md): nombre trim de 1–180 caracteres Unicode; correo opcional trim/minúsculas, dirección simple válida hasta 254 bytes; teléfono opcional trim de hasta 40 caracteres; notas opcionales normalizadas a LF de hasta 5000 caracteres. UTF-8 válido, sin controles salvo LF/tab en notas. Opcionales vacíos son NULL; estado obligatorio active/inactive. No se agrega unicidad de correo de clientes ni formato telefónico nacional.
+
+Búsqueda literal por nombre/correo (hasta 180 caracteres), filtro activo/inactivo, orden created_desc/created_asc/name_asc/name_desc con desempate UUID, páginas 10/25/50 y offset máximo 100000. Solo valores allowlisted llegan al repositorio; ORDER BY utiliza CASE y parámetros, sin concatenar SQL recibido. sqlc 1.31.1/MySQL requiere comparaciones =/OR en ese CASE: no expande sqlc.arg dentro de IN. Lista/conteo usan la misma transacción de lectura REPEATABLE READ.
+
+Mutaciones bloquean empresa antes de revalidar permiso y resolver objetivo; cambio y auditoría comparten transacción. IDs de cliente malformados se rechazan como 404 antes de comparar con columnas ASCII. No hay nueva migración; el esquema existente cubre los campos y la baja lógica.
 
 ### Actualización aislada por tenant
 ```sql

@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"gopanel/internal/config"
+	"gopanel/internal/modules/customers"
+	customershandler "gopanel/internal/modules/customers/handler"
 	"gopanel/internal/modules/members"
 	membershandler "gopanel/internal/modules/members/handler"
 	"gopanel/internal/modules/tenants"
@@ -55,6 +57,7 @@ func run(logger *slog.Logger) int {
 	router := httpserver.NewRouter(db, logger, cfg.HealthTimeout)
 	authHTTP := authhandler.New(service, cfg.Env == "production", logger)
 	authHTTP.Register(router)
+	customershandler.New(customers.New(db), authHTTP).Register(router)
 	membershandler.New(members.New(db), authHTTP).Register(router)
 	tenantshandler.New(tenants.New(db), authHTTP).Register(router)
 	maintenanceDone := make(chan struct{})
