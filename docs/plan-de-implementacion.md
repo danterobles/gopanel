@@ -1,6 +1,6 @@
 # Plan de implementación por etapas
 
-Etapas 0–6 autorizadas y completadas localmente. Actualizado: 2026-10-22. La etapa 6 incorpora CRUD de productos y extracción visual tras validar ambos CRUD sobre MySQL nativo. No se inicia etapa 7 en esta entrega. Las fases orientativas del PRD agrupan estas etapas; estimación sujeta a evidencia.
+Etapas 0–7 autorizadas y completadas localmente. Actualizado: 2026-10-22. La etapa 7 incorpora dashboard y SSE sobre MySQL nativo. No se inicia etapa 8 en esta entrega. Las fases orientativas del PRD agrupan estas etapas; estimación sujeta a evidencia.
 
 Evidencia de bootstrap: [validación de etapa 1](validacion-etapa-1.md). La ejecución remota de CI queda pendiente; no se confunde con las comprobaciones locales.
 
@@ -33,4 +33,4 @@ Evidencia de bootstrap: [validación de etapa 1](validacion-etapa-1.md). La ejec
 - La ausencia de contraparte Laravel/Filament impide concluir el benchmark comparativo, aunque permite medir Go.
 - Valores de política y herramientas todavía abiertos tienen etapas límite en [decisiones pendientes](decisiones-pendientes.md); no bloquean documentación ni trabajo independiente.
 
-Etapas 0–6 completadas localmente. D-04/D-05 cerradas por ADR-0005; D-06 para clientes/productos por ADR-0006/0007. Evidencia en [validación de etapa 6](validacion-etapa-6.md), con tiempos del segundo CRUD y extracción registrados por separado. Siguiente tarea: etapa 7, cerrar D-07/D-08 e implementar dashboard y SSE. La ejecución remota de CI y la validación operativa integral siguen pendientes.
+Etapas 0–7 completadas localmente. D-04/D-05 cerradas por ADR-0005; D-06 para clientes/productos por ADR-0006/0007. D-07/D-08 cerradas por ADR-0008; evidencia en [validación de etapa 7](validacion-etapa-7.md). Los tiempos del segundo CRUD y extracción permanecen registrados por separado. Siguiente tarea: etapa 8, E2E/observabilidad/operación/carga y comparación; resolver D-09/D-10 antes de sus trabajos dependientes. La ejecución remota de CI y la validación operativa integral siguen pendientes.

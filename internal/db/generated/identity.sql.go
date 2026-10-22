@@ -333,6 +333,37 @@ func (q *Queries) RevokeUserSessions(ctx context.Context, userID string) error {
 	return err
 }
 
+const streamAuthorization = `-- name: StreamAuthorization :one
+SELECT COUNT(*) FROM sessions s
+JOIN users u ON u.id=s.user_id
+JOIN tenants t ON t.id=s.active_tenant_id
+JOIN tenant_memberships m ON m.tenant_id=t.id AND m.user_id=u.id
+WHERE s.token_hash=? AND s.user_id=? AND s.active_tenant_id=?
+AND s.expires_at>? AND s.last_seen_at>?
+AND u.is_active=TRUE AND t.is_active=TRUE AND m.is_active=TRUE AND m.role IN ('owner','admin','viewer')
+`
+
+type StreamAuthorizationParams struct {
+	TokenHash  []byte
+	UserID     string
+	TenantID   sql.NullString
+	Now        time.Time
+	IdleCutoff time.Time
+}
+
+func (q *Queries) StreamAuthorization(ctx context.Context, arg StreamAuthorizationParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, streamAuthorization,
+		arg.TokenHash,
+		arg.UserID,
+		arg.TenantID,
+		arg.Now,
+		arg.IdleCutoff,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const touchSession = `-- name: TouchSession :execrows
 UPDATE sessions SET last_seen_at=?
 WHERE token_hash=? AND last_seen_at<=? AND expires_at>?

@@ -1,6 +1,6 @@
 # DATA — Modelo de datos GoPanel Pilot
 
-**Versión:** 1.6 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
+**Versión:** 1.7 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
 
 Conciliación: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). El esquema SQL de referencia se implementó en `migrations/000001_initial.up.sql` durante etapa 2; rollback separado y operación nativa según [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md).
 
@@ -184,6 +184,10 @@ FROM customers
 WHERE tenant_id = ? AND status = 'active' AND deleted_at IS NULL;
 ```
 
+### Dashboard implementado en etapa 7
+
+[ADR-0008](docs/adr/0008-dashboard-utc-y-ciclo-sse.md) fija inicio a 00:00 UTC del día actual menos 29 días, incluido, y fin al instante de consulta, excluido. Los activos cuentan status active y deleted_at NULL; clientes recientes/serie cuentan cualquier estado no eliminado, excluyendo futuros. `internal/db/queries/dashboard.sql` consulta directamente por tenant; servicio autoriza y agrega en el mismo snapshot REPEATABLE READ. Serie de 30 días con ceros en Go, sin caché. No hay cambios de esquema ni índices nuevos.
+
 ## 5. Sesiones sin Redis
 - Generar token aleatorio con `crypto/rand` (al menos 32 bytes), entregar solo en cookie segura y guardar `SHA-256(token)` en `sessions.token_hash`.
 - Comprobar expiración absoluta e inactividad en servidor. Renovar `last_seen_at` con frecuencia limitada para evitar escrituras en cada request, sin caché.
@@ -228,7 +232,8 @@ La unicidad definitiva permanece en el índice generado por tenant con collation
 ## 7. Eventos SSE
 - Broker **en memoria del proceso Go**, separado por tenant; no almacenar eventos en MySQL como cola en esta POC.
 - Solo señales `{type, resource, version}` sin PII. Publicar después de `COMMIT`.
-- SSE verifica sesión y membresía; al reconectar, el cliente vuelve a consultar MySQL.
+- SSE verifica sesión y membresía al conectar, cada 2 s y antes de enviar, mediante StreamAuthorization en identity.sql. Incluye sesión aún existente, expiración absoluta/idle, usuario/tenant/miembro activos y rol. SSE/widgets no hacen touch de last_seen_at.
+- ready obliga a refrescar desde MySQL al conectar/reconectar; Last-Event-ID no reproduce eventos. version es UUID opaco. Límites, heartbeat, backpressure y cierre por revocación según ADR-0008.
 - Una sola instancia Go: no hay fan-out entre nodos. La pérdida de eventos durante reinicios es aceptable.
 
 ## 8. Seeds y pruebas

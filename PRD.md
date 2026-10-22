@@ -1,6 +1,6 @@
 # PRD — GoPanel Pilot
 
-**Versión:** 1.6 · **Estado:** Etapa 6 completa: productos y componentes compartidos validados · **Producto:** SaaS administrativo multiempresa de referencia
+**Versión:** 1.7 · **Estado:** Etapa 7 completa: dashboard y SSE validados localmente · **Producto:** SaaS administrativo multiempresa de referencia
 
 Contratos conciliados en [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). Seguimiento: [plan por etapas](docs/plan-de-implementacion.md), [matriz de aceptación](docs/matriz-de-aceptacion.md) y [decisiones pendientes](docs/decisiones-pendientes.md).
 
@@ -48,6 +48,7 @@ Un usuario puede pertenecer a varias empresas con distintos roles.
 - Gráfica simple: clientes creados por día en últimos 30 días.
 - Refresco parcial HTMX; estados vacío/error.
 - Actualización SSE al cambiar clientes/productos en el tenant activo (evento de invalidación, no datos sensibles).
+- [ADR-0008](docs/adr/0008-dashboard-utc-y-ciclo-sse.md): 30 días calendario UTC hasta el instante de consulta, ceros diarios, exclusión de bajas/futuros y revalidación pasiva de streams.
 
 ### 4.6 Experiencia y operaciones
 - Interfaz responsive para escritorio y tablet; navegación con teclado y etiquetas accesibles.
@@ -109,7 +110,7 @@ Comparar con una implementación Laravel + Filament del mismo alcance, misma bas
 - **Comparación injusta:** mismas historias, datos, hardware y metodología.
 
 ## 12. Preguntas abiertas
-Persistencia, política de sesiones y Argon2id están decididas en [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md): máximo 12 h, inactividad 30 min y touch cada 1 min por defecto; recuperación automática diferida. D-04/D-05 se cierran en [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md): gestión de miembros Admin/Viewer, Owner de bootstrap, configuración del nombre de empresa y administración global de empresas/métricas del pool SQL. No se habilita transferencia de Owner. D-06 de clientes se cierra mediante ADR-0006, con flujos HTML/HTMX y validación implementados. D-06 de productos se cierra mediante ADR-0007; despliegue y contratos de dashboard/SSE siguen pendientes de sus etapas. Herramientas y otros contratos operativos se concretan en [decisiones pendientes](docs/decisiones-pendientes.md), mediante ADR antes de la etapa correspondiente. La existencia de una pregunta abierta no incorpora una funcionalidad adicional al MVP.
+Persistencia, política de sesiones y Argon2id están decididas en [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md): máximo 12 h, inactividad 30 min y touch cada 1 min por defecto; recuperación automática diferida. D-04/D-05 se cierran en [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md): gestión de miembros Admin/Viewer, Owner de bootstrap, configuración del nombre de empresa y administración global de empresas/métricas del pool SQL. No se habilita transferencia de Owner. D-06 de clientes se cierra mediante ADR-0006, con flujos HTML/HTMX y validación implementados. D-06 de productos se cierra mediante ADR-0007; D-07/D-08 de dashboard/SSE se cierran mediante ADR-0008. Despliegue y benchmark siguen pendientes de etapa 8. Herramientas y otros contratos operativos se concretan en [decisiones pendientes](docs/decisiones-pendientes.md), mediante ADR antes de la etapa correspondiente. La existencia de una pregunta abierta no incorpora una funcionalidad adicional al MVP.
 
 ## 13. Decisiones de alcance de la POC (ratificadas desde v1.1)
 - No utilizar Redis, Memcached ni caché de aplicación.

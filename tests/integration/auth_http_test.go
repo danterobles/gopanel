@@ -24,6 +24,8 @@ import (
 	dbgen "gopanel/internal/db/generated"
 	customerapp "gopanel/internal/modules/customers"
 	customerhttp "gopanel/internal/modules/customers/handler"
+	"gopanel/internal/modules/dashboard"
+	dashboardhttp "gopanel/internal/modules/dashboard/handler"
 	memberapp "gopanel/internal/modules/members"
 	memberhttp "gopanel/internal/modules/members/handler"
 	members "gopanel/internal/modules/members/repository"
@@ -34,6 +36,8 @@ import (
 	"gopanel/internal/platform/auth"
 	authhandler "gopanel/internal/platform/auth/handler"
 	"gopanel/internal/platform/auth/password"
+	"gopanel/internal/platform/events"
+	eventshttp "gopanel/internal/platform/events/handler"
 	httpserver "gopanel/internal/platform/http"
 	"gopanel/internal/platform/id"
 )
@@ -60,6 +64,7 @@ type authFixture struct {
 	user, platform, north, south, southMember, foreign string
 	logs                                               *logBuffer
 	secure                                             bool
+	broker                                             *events.Broker
 }
 
 func newAuthFixture(t *testing.T, secure bool, limit ...int) *authFixture {
@@ -97,18 +102,23 @@ func newAuthFixture(t *testing.T, secure bool, limit ...int) *authFixture {
 	router := httpserver.NewRouter(db, logger, cfg.HealthTimeout)
 	authHTTP := authhandler.New(service, secure, logger)
 	authHTTP.Register(router)
-	producthttp.New(productapp.New(db), authHTTP).Register(router)
-	customerhttp.New(customerapp.New(db), authHTTP).Register(router)
+	broker := events.New()
+	t.Cleanup(broker.Close)
+	dashboardhttp.New(dashboard.New(db, nil), authHTTP).Register(router)
+	eventshttp.New(broker, authHTTP, t.Context()).Register(router)
+	producthttp.New(productapp.New(db, broker), authHTTP).Register(router)
+	customerhttp.New(customerapp.New(db, broker), authHTTP).Register(router)
 	memberhttp.New(memberapp.New(db), authHTTP).Register(router)
 	tenanthttp.New(tenantapp.New(db), authHTTP).Register(router)
-	var server *httptest.Server
+	server := httptest.NewUnstartedServer(router)
+	server.Config = httpserver.NewServer("", router)
 	if secure {
-		server = httptest.NewTLSServer(router)
+		server.StartTLS()
 	} else {
-		server = httptest.NewServer(router)
+		server.Start()
 	}
 	t.Cleanup(server.Close)
-	return &authFixture{cfg: cfg, db: db, service: service, server: server, user: user, platform: platform, north: north, south: south, southMember: southMember, foreign: foreign, logs: logs, secure: secure}
+	return &authFixture{cfg: cfg, db: db, service: service, server: server, user: user, platform: platform, north: north, south: south, southMember: southMember, foreign: foreign, logs: logs, secure: secure, broker: broker}
 }
 func (f *authFixture) client() *http.Client {
 	client := f.server.Client()

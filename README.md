@@ -1,6 +1,6 @@
 # GoPanel Pilot
 
-SaaS administrativo multiempresa en construcción. Etapas 0–6: bootstrap, persistencia, identidad, permisos, miembros, CRUD de clientes/productos y componentes Templ compartidos. El desarrollo local usa Go, Node y MySQL nativos. Dashboard y SSE HTTP siguen en la etapa 7.
+SaaS administrativo multiempresa en construcción. Etapas 0–7: bootstrap, persistencia, identidad, permisos, miembros, CRUD de clientes/productos, componentes Templ compartidos, dashboard y SSE. El desarrollo local usa Go, Node y MySQL nativos. SSE opera en una única instancia Go, sin Redis ni caché.
 
 ## Arranque nativo
 
@@ -15,7 +15,7 @@ make seed
 make dev
 ```
 
-Visitar [GoPanel local](http://localhost:8080). Ingresar en `/login` con las credenciales seed privadas y seleccionar empresa. `/app` confirma nombre y rol de la membresía verificada; el dashboard se incorporará después. Ctrl+C detiene Go con drenaje de solicitudes; no detiene MySQL. `make dev`, migraciones, seeds e integración cargan `.env` mediante `scripts/with-env.sh`. El binario por sí mismo solo lee entorno; se puede ejecutar desde cualquier directorio porque sus assets están embebidos.
+Visitar [GoPanel local](http://localhost:8080). Ingresar en `/login` con las credenciales seed privadas y seleccionar empresa. `/app` muestra el dashboard de la empresa activa, su nombre y rol de membresía verificada. Ctrl+C detiene Go con drenaje de solicitudes; no detiene MySQL. `make dev`, migraciones, seeds e integración cargan `.env` mediante `scripts/with-env.sh`. El binario por sí mismo solo lee entorno; se puede ejecutar desde cualquier directorio porque sus assets están embebidos.
 
 El entorno local ya configurado usa MySQL en `127.0.0.1:3306`, base `goconcept` y HTTP en 8080. No se requieren contenedores. La primera generación puede descargar módulos y herramientas fijadas.
 
@@ -89,7 +89,7 @@ Se verifican up/down/up y dirty, aislamiento entre tenants en lectura/mutación/
 | `LOGIN_ATTEMPTS_PER_MINUTE` | 10; entre 1 y 100 por IP remota, ventana de un minuto |
 | `SEED_COUNT` | 100 por defecto, de 1 a 10 000; workload documentado de 10 000 |
 
-Pool de aplicación: máximo 10 conexiones abiertas/5 ociosas, vida 3 minutos, idle 1 minuto y red 3 segundos. UTC, utf8mb4, collation utf8mb4_0900_ai_ci, modo estricto y `clientFoundRows` por conexión. Solo migraciones permiten múltiples sentencias. HTTP: cabeceras 5s, lectura/escritura 15s; SSE revisará el timeout de escritura en D-08.
+Pool de aplicación: máximo 10 conexiones abiertas/5 ociosas, vida 3 minutos, idle 1 minuto y red 3 segundos. UTC, utf8mb4, collation utf8mb4_0900_ai_ci, modo estricto y `clientFoundRows` por conexión. Solo migraciones permiten múltiples sentencias. HTTP: cabeceras 5s, lectura/escritura 15s; SSE renueva el deadline de cada escritura/flush a 5s según ADR-0008.
 
 GET `/health/live` comprueba proceso; GET `/health/ready` comprueba conexión MySQL (todavía no versión/esquema). Devuelven JSON genérico no cacheable y no exponen credenciales. Logs JSON con request ID interno, patrón de ruta, método, estado y latencia; sin query strings, cuerpos ni valores de panic.
 
@@ -135,6 +135,18 @@ Búsqueda literal por SKU/nombre, filtro por estado y orden por nombre, fecha o 
 
 Contrato: [ADR-0007](docs/adr/0007-productos-sku-precios-y-extraccion.md). Pruebas y extracción: [validación de etapa 6](docs/validacion-etapa-6.md); tiempos separados en [registro de esfuerzo](docs/registro-de-esfuerzo.md).
 
+## Dashboard y SSE
+
+Tras seleccionar empresa, `/app` muestra clientes activos, productos activos, clientes recientes y una gráfica diaria accesible con tabla desplegable por teclado. Los últimos 30 días son días calendario UTC desde 00:00 del día actual menos 29 días hasta el instante consultado; clientes recientes incluyen activos/inactivos, excluyendo bajas y fechas futuras. Las tarjetas de activos cuentan todos los registros activos no eliminados, independientemente de su fecha.
+
+**Actualizar métricas** hace GET parcial a `/app/dashboard/widgets`; **Recargar página** funciona con navegación normal. Se muestran estados vacío, error y carga. El dashboard conserva enlaces a recursos, miembros/configuración según rol y logout. Viewer consulta métricas sin permisos de escritura.
+
+La extensión SSE instalada se sirve desde `/static/sse.js`. `/app/events` autentica con cookie y envía señales sin datos comerciales; crear/editar/dar de baja clientes o productos desde otra pestaña actualiza las métricas tras el commit. Cada reconexión refresca desde MySQL, incluso tras reiniciar Go. No hay replay ni garantía de entrega; mantener refresco manual. Cambiar empresa en otra pestaña fuerza recarga del dashboard al detectar que su contexto quedó atrás.
+
+Streams y refrescos de fondo no renuevan la sesión. SSE verifica autorización cada 2 segundos y antes de cada señal; revocación, cambio de empresa, logout o caducidad cierran la conexión. Buffer 16; máximo 256 streams, 32 por empresa y 4 por usuario. Cliente lento se desconecta sin bloquear el CRUD y retiene su cupo hasta salir. Una sola instancia Go; para usar el mismo puerto, detener primero el proceso anterior de la aplicación, sin detener MySQL.
+
+Contrato y pruebas: [ADR-0008](docs/adr/0008-dashboard-utc-y-ciclo-sse.md) y [validación de etapa 7](docs/validacion-etapa-7.md). Sin nuevas dependencias o migraciones.
+
 ## Alternativa Compose
 
 Se conserva para reproducibilidad, sin usarla para validar esta etapa local. Copiar `.env.compose.example` a `.env.compose` y definir contraseñas privadas distintas; no reutilizar el `.env` nativo de root como `MYSQL_USER` del contenedor. El ejemplo usa MySQL 13306 para evitar colisionar con el servidor local.
@@ -150,6 +162,6 @@ CI está preparado para generación reproducible, formato/vet, tests, integraci�
 
 ## Seguimiento
 
-Leer [PRD](PRD.md), [arquitectura](ARQUITECTURA.md), [datos](DATA.md), [AGENTS](AGENTS.md), [plan](docs/plan-de-implementacion.md) y [aceptación](docs/matriz-de-aceptacion.md). Decisiones: [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md), [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md), [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md), [ADR-0006](docs/adr/0006-clientes-validacion-y-flujos-http.md), [ADR-0007](docs/adr/0007-productos-sku-precios-y-extraccion.md), [pendientes](docs/decisiones-pendientes.md). Evidencia: [etapa 1](docs/validacion-etapa-1.md) [etapa 2](docs/validacion-etapa-2.md) [etapa 3](docs/validacion-etapa-3.md) [etapa 4](docs/validacion-etapa-4.md) [etapa 5](docs/validacion-etapa-5.md) y [etapa 6](docs/validacion-etapa-6.md).
+Leer [PRD](PRD.md), [arquitectura](ARQUITECTURA.md), [datos](DATA.md), [AGENTS](AGENTS.md), [plan](docs/plan-de-implementacion.md) y [aceptación](docs/matriz-de-aceptacion.md). Decisiones: [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md), [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md), [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md), [ADR-0006](docs/adr/0006-clientes-validacion-y-flujos-http.md), [ADR-0007](docs/adr/0007-productos-sku-precios-y-extraccion.md), [ADR-0008](docs/adr/0008-dashboard-utc-y-ciclo-sse.md), [pendientes](docs/decisiones-pendientes.md). Evidencia: [etapa 1](docs/validacion-etapa-1.md) [etapa 2](docs/validacion-etapa-2.md) [etapa 3](docs/validacion-etapa-3.md) [etapa 4](docs/validacion-etapa-4.md) [etapa 5](docs/validacion-etapa-5.md) [etapa 6](docs/validacion-etapa-6.md) y [etapa 7](docs/validacion-etapa-7.md).
 
-Siguiente etapa: 7, dashboard y SSE con broker en memoria; cerrar primero D-07/D-08. TLS/proxy y operación pública siguen en D-09.
+Siguiente etapa: 8, E2E, observabilidad, carga, operación y benchmark. TLS/proxy/backups y la contraparte Laravel/Filament siguen en D-09/D-10.

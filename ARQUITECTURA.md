@@ -1,6 +1,6 @@
 # ARQUITECTURA — GoPanel Pilot
 
-**Versión:** 1.5 · **Estilo:** monolito modular server-rendered
+**Versión:** 1.6 · **Estilo:** monolito modular server-rendered
 
 Conciliación de contratos: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). Las decisiones aún no tomadas se registran en [decisiones pendientes](docs/decisiones-pendientes.md).
 
@@ -93,7 +93,12 @@ Makefile
 
 [ADR-0007](docs/adr/0007-productos-sku-precios-y-extraccion.md) aplica el mismo contrato HTTP de clientes a productos. Validación monetaria entera y SKU específica del dominio; 1062 se transforma en error de campo sin filtrar SQL. Módulo products conserva servicios/repositorios y consultas explícitas con seis órdenes. Después de pasar ambas baterías CRUD se extrajeron layout, navegación, avisos, campos, formulario, acciones, estructura de tabla y paginación. Filas, modelos de vistas, validación, autorización y SQL siguen por dominio; no hay DSL ni registro genérico de recursos. Las baterías de ambos CRUD también pasan después de la extracción.
 
-### Tiempo real
+### Dashboard y tiempo real implementados (etapa 7)
+
+[ADR-0008](docs/adr/0008-dashboard-utc-y-ciclo-sse.md) define ventana UTC y autorización de streams. `modules/dashboard/{handler,service,repository}` usa SQL/sqlc con tenant explícito y snapshot REPEATABLE READ; genera 30 días con ceros y una gráfica SVG con tabla accesible. `/app` tiene navegación/logout y conexión SSE fuera del fragmento `/app/dashboard/widgets`. Refrescos envían un marcador público tenant:rol; si cambia la sesión en otra pestaña, una discrepancia provoca navegación completa para renovar cabecera y permisos visibles. El marcador nunca define el actor ni las consultas.
+
+`platform/events` mantiene solo suscripciones efímeras acotadas; no guarda datos comerciales. Save/Delete de ambos CRUD publican tras COMMIT. SSE revalida sesión y membresía en MySQL cada 2 s y antes de cada evento; stream/widgets no renuevan inactividad. `ready` fuerza nueva lectura al conectar/reconectar, `closed` cierra la extensión al revocar acceso. Buffer lleno cierra al cliente lento; su cupo sigue ocupado hasta salir del handler. Heartbeat 15 s, retry 3 s y escrituras con deadline 5 s mediante ResponseController; contexto de apagado termina streams antes de drenar HTTP. Máximos: 256 conexiones, 32/tenant, 4/usuario y buffer 16. Una sola instancia, sin replay, caché ni cola MySQL.
+
 Mutación confirmada -> publicar evento interno `{type, tenant_id, resource, version}` -> broker en memoria -> SSE `GET /app/events` autenticado y vinculado a tenant -> navegador recibe solo `{type, resource, version}` -> HTMX vuelve a solicitar widget/tabla. No incluir PII ni entidades completas. `version` no garantiza reproducción duradera ni orden global.
 
 ## 6. Rutas de referencia
@@ -116,7 +121,8 @@ Mutación confirmada -> publicar evento interno `{type, tenant_id, resource, ver
 | GET | `/app/products/{id}` | `products.read` |
 | GET/POST | `/app/products/{id}/edit` | `products.update` |
 | GET/POST | `/app/products/{id}/delete` | `products.delete` |
-| GET | `/app/events` | Autenticado + tenant activo |
+| GET | `/app/dashboard/widgets` | `dashboard.read`; sesión pasiva |
+| GET | `/app/events` | Sesión/membresía revalidadas y rol comercial; sin redirects HTML |
 | GET | `/health/live` | Operación |
 | GET | `/health/ready` | Operación, sin detalles internos |
 

@@ -68,3 +68,12 @@ DELETE FROM sessions WHERE active_tenant_id=?;
 
 -- name: ActiveUserIDByEmail :one
 SELECT id FROM users WHERE email=sqlc.arg(email) AND CAST(email AS BINARY)=CAST(sqlc.arg(email) AS BINARY) AND is_active=TRUE;
+
+-- name: StreamAuthorization :one
+SELECT COUNT(*) FROM sessions s
+JOIN users u ON u.id=s.user_id
+JOIN tenants t ON t.id=s.active_tenant_id
+JOIN tenant_memberships m ON m.tenant_id=t.id AND m.user_id=u.id
+WHERE s.token_hash=sqlc.arg(token_hash) AND s.user_id=sqlc.arg(user_id) AND s.active_tenant_id=sqlc.arg(tenant_id)
+AND s.expires_at>sqlc.arg(now) AND s.last_seen_at>sqlc.arg(idle_cutoff)
+AND u.is_active=TRUE AND t.is_active=TRUE AND m.is_active=TRUE AND m.role IN ('owner','admin','viewer');

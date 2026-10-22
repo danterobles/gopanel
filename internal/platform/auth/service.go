@@ -205,6 +205,14 @@ func (s *Service) Login(ctx context.Context, email, value, oldToken, ip, request
 }
 
 func (s *Service) Authenticate(ctx context.Context, token string) (Principal, error) {
+	return s.authenticate(ctx, token, true)
+}
+
+// AuthenticatePassive checks a session without renewing user activity.
+func (s *Service) AuthenticatePassive(ctx context.Context, token string) (Principal, error) {
+	return s.authenticate(ctx, token, false)
+}
+func (s *Service) authenticate(ctx context.Context, token string, touch bool) (Principal, error) {
 	hash, err := parseToken(token)
 	if err != nil {
 		return Principal{}, ErrUnauthorized
@@ -221,7 +229,7 @@ func (s *Service) Authenticate(ctx context.Context, token string) (Principal, er
 	if !session.LastSeenAt.After(now.Add(-s.cfg.SessionIdleTTL)) {
 		return Principal{}, ErrUnauthorized
 	}
-	if !now.Before(session.LastSeenAt.Add(s.cfg.SessionTouchInterval)) {
+	if touch && !now.Before(session.LastSeenAt.Add(s.cfg.SessionTouchInterval)) {
 		if _, err = q.TouchSession(ctx, dbgen.TouchSessionParams{TokenHash: hash[:], Now: now, TouchCutoff: now.Add(-s.cfg.SessionTouchInterval)}); err != nil {
 			return Principal{}, fmt.Errorf("touch session: %w", err)
 		}
@@ -352,4 +360,17 @@ func (s *Service) PlatformAdmin(ctx context.Context, p Principal) (bool, error) 
 		return false, ErrUnauthorized
 	}
 	return value, err
+}
+
+// StreamAuthorized checks session and membership together, without a touch or cache.
+func (s *Service) StreamAuthorized(ctx context.Context, p Principal) error {
+	now := s.now().UTC()
+	count, err := dbgen.New(s.db).StreamAuthorization(ctx, dbgen.StreamAuthorizationParams{TokenHash: p.hash[:], UserID: p.UserID(), TenantID: optional(p.TenantID()), Now: now, IdleCutoff: now.Add(-s.cfg.SessionIdleTTL)})
+	if err != nil {
+		return fmt.Errorf("revalidate stream: %w", err)
+	}
+	if count != 1 {
+		return ErrUnauthorized
+	}
+	return nil
 }

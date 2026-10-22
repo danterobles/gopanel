@@ -10,13 +10,23 @@ import (
 	repo "gopanel/internal/modules/customers/repository"
 	tenantrepo "gopanel/internal/modules/tenants/repository"
 	audit "gopanel/internal/platform/audit/repository"
+	"gopanel/internal/platform/events"
 	"gopanel/internal/platform/rbac"
 	"gopanel/internal/platform/tenancy"
 )
 
-type Service struct{ db *sql.DB }
+type Service struct {
+	db     *sql.DB
+	events events.Publisher
+}
 
-func New(db *sql.DB) *Service { return &Service{db: db} }
+func New(db *sql.DB, publishers ...events.Publisher) *Service {
+	s := &Service{db: db}
+	if len(publishers) > 0 {
+		s.events = publishers[0]
+	}
+	return s
+}
 func (s *Service) List(ctx context.Context, actor tenancy.ActorContext, options repo.ListOptions) (rows []dbgen.Customer, count int64, err error) {
 	defer func() {
 		if err != nil {
@@ -122,6 +132,9 @@ func (s *Service) Save(ctx context.Context, actor tenancy.ActorContext, resource
 		return "", normalized, err
 	}
 	err = tx.Commit()
+	if err == nil && s.events != nil {
+		s.events.Publish(actor.TenantID, "customers")
+	}
 	return
 }
 func (s *Service) Delete(ctx context.Context, actor tenancy.ActorContext, resource, confirmation, requestID string) (err error) {
@@ -151,7 +164,13 @@ func (s *Service) Delete(ctx context.Context, actor tenancy.ActorContext, resour
 	if err = audit.New(tx).Append(ctx, actor.TenantID, audit.Entry{ActorID: actor.UserID, Action: "customers.delete", EntityType: "customer", EntityID: resource, Outcome: "success", RequestID: requestID}); err != nil {
 		return err
 	}
-	return tx.Commit()
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+	if s.events != nil {
+		s.events.Publish(actor.TenantID, "customers")
+	}
+	return nil
 }
 func (s *Service) Rejected(ctx context.Context, actor tenancy.ActorContext, action, requestID string) error {
 	return audit.New(s.db).Append(ctx, actor.TenantID, audit.Entry{ActorID: actor.UserID, Action: action, EntityType: "customer", Outcome: "denied", RequestID: requestID})

@@ -13,6 +13,8 @@ import (
 	"gopanel/internal/config"
 	"gopanel/internal/modules/customers"
 	customershandler "gopanel/internal/modules/customers/handler"
+	"gopanel/internal/modules/dashboard"
+	dashboardhandler "gopanel/internal/modules/dashboard/handler"
 	"gopanel/internal/modules/members"
 	membershandler "gopanel/internal/modules/members/handler"
 	"gopanel/internal/modules/products"
@@ -22,6 +24,8 @@ import (
 	"gopanel/internal/platform/auth"
 	authhandler "gopanel/internal/platform/auth/handler"
 	"gopanel/internal/platform/database"
+	"gopanel/internal/platform/events"
+	eventshandler "gopanel/internal/platform/events/handler"
 	httpserver "gopanel/internal/platform/http"
 )
 
@@ -59,8 +63,12 @@ func run(logger *slog.Logger) int {
 	router := httpserver.NewRouter(db, logger, cfg.HealthTimeout)
 	authHTTP := authhandler.New(service, cfg.Env == "production", logger)
 	authHTTP.Register(router)
-	customershandler.New(customers.New(db), authHTTP).Register(router)
-	productshandler.New(products.New(db), authHTTP).Register(router)
+	broker := events.New()
+	defer broker.Close()
+	dashboardhandler.New(dashboard.New(db, nil), authHTTP).Register(router)
+	eventshandler.New(broker, authHTTP, ctx).Register(router)
+	customershandler.New(customers.New(db, broker), authHTTP).Register(router)
+	productshandler.New(products.New(db, broker), authHTTP).Register(router)
 	membershandler.New(members.New(db), authHTTP).Register(router)
 	tenantshandler.New(tenants.New(db), authHTTP).Register(router)
 	maintenanceDone := make(chan struct{})

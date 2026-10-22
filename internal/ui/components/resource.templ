@@ -3,7 +3,7 @@ package components
 import "strconv"
 import "strings"
 
-templ ResourcePage(title, tenant, contentID string, body templ.Component) {
+templ ResourcePage(title, tenant, contentID string, body templ.Component, scripts ...string) {
 	<!DOCTYPE html>
 	<html lang="es">
 		<head>
@@ -12,6 +12,9 @@ templ ResourcePage(title, tenant, contentID string, body templ.Component) {
 			<meta name="htmx-config" content='{"allowEval":false,"allowScriptTags":false,"includeIndicatorStyles":false,"historyCacheSize":0,"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"[45]..","swap":true,"error":true}]}'/>
 			<title>{ title } · GoPanel</title>
 			<link rel="stylesheet" href="/static/app.css"/><script src="/static/htmx.min.js" defer></script>
+for _,script:=range scripts {
+<script src={script} defer></script>
+}
 		</head>
 		<body class="min-h-screen bg-slate-50 text-slate-900">
 			<a href={ templ.SafeURL("#" + contentID) } class="sr-only focus:not-sr-only">Saltar al contenido</a>

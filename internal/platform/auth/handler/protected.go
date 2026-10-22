@@ -1,12 +1,17 @@
 package handler
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 
+	"gopanel/internal/platform/auth"
+	"gopanel/internal/platform/tenancy"
 	"gopanel/internal/ui/pages"
 )
 
@@ -56,4 +61,68 @@ func mutationAction(path string) string {
 	default:
 		return "tenants.activate"
 	}
+}
+
+// PassiveProtected uses the normal HTML authorization flow without renewing idle time.
+func (h *Handler) PassiveProtected(r chi.Router, routes func(chi.Router)) {
+	r.Group(func(r chi.Router) { r.Use(noStore, h.passiveSession, h.Tenant); routes(r) })
+}
+func (h *Handler) passiveSession(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		p, err := h.service.AuthenticatePassive(r.Context(), h.token(r))
+		if errors.Is(err, auth.ErrUnauthorized) {
+			redirect(w, r, "/login")
+			return
+		}
+		if err != nil {
+			h.failure(w, r)
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), principalKey{}, p)))
+	})
+}
+
+// Stream has explicit status codes: EventSource must never follow HTML login redirects.
+func (h *Handler) Stream(next http.Handler) http.Handler {
+	return noStore(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Sec-Fetch-Site") == "cross-site" || (r.Header.Get("Origin") != "" && !sameOrigin(r, h.secure)) {
+			http.Error(w, "forbidden", 403)
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		p, err := h.service.AuthenticatePassive(ctx, h.token(r))
+		if errors.Is(err, auth.ErrUnauthorized) {
+			cancel()
+			http.Error(w, "unauthorized", 401)
+			return
+		}
+		if err != nil {
+			cancel()
+			http.Error(w, "unavailable", 503)
+			return
+		}
+		member, err := h.service.Membership(ctx, p)
+		cancel()
+		if errors.Is(err, auth.ErrTenant) {
+			http.Error(w, "forbidden", 403)
+			return
+		}
+		if err != nil {
+			http.Error(w, "unavailable", 503)
+			return
+		}
+		actor := tenancy.ActorContext{UserID: p.UserID(), TenantID: member.TenantID, TenantName: member.TenantName, Role: member.Role}
+		requestCtx := context.WithValue(tenancy.WithActor(r.Context(), actor), principalKey{}, p)
+		next.ServeHTTP(w, r.WithContext(requestCtx))
+	}))
+}
+func sameOrigin(r *http.Request, secure bool) bool {
+	scheme := "http"
+	if secure {
+		scheme = "https"
+	}
+	return r.Header.Get("Origin") == scheme+"://"+r.Host
+}
+func (h *Handler) StreamAuthorized(r *http.Request) error {
+	return h.service.StreamAuthorized(r.Context(), principal(r))
 }

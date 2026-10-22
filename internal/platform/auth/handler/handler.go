@@ -16,7 +16,6 @@ import (
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 	"gopanel/internal/platform/auth"
-	"gopanel/internal/platform/rbac"
 	"gopanel/internal/platform/tenancy"
 	"gopanel/internal/ui/pages"
 )
@@ -44,7 +43,7 @@ func (h *Handler) Register(r chi.Router) {
 			r.Get("/app/tenants/select", h.selectPage)
 			r.With(h.origin.Handler, h.parse, h.sessionCSRF).Post("/app/tenants/activate", h.activate)
 			r.With(h.origin.Handler, h.parse, h.sessionCSRF).Post("/logout", h.logout)
-			r.With(h.Tenant).Get("/app", h.app)
+
 		})
 	})
 }
@@ -328,10 +327,4 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	h.clear(w, h.sessionName())
 	h.clear(w, h.csrfName())
 	redirect(w, r, "/login")
-}
-func (h *Handler) app(w http.ResponseWriter, r *http.Request) {
-	actor, _ := tenancy.Actor(r.Context())
-	p := principal(r)
-	component := pages.ActiveTenant(p.CSRF(), actor.TenantName, actor.Role, rbac.Can(actor.Role, rbac.MembersRead), rbac.Can(actor.Role, rbac.TenantSettings))
-	h.Render(w, r, 200, component, component)
 }
