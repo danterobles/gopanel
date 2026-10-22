@@ -1,6 +1,8 @@
 # DATA — Modelo de datos GoPanel Pilot
 
-**Versión:** 1.1 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
+**Versión:** 1.2 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
+
+Conciliación: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). El esquema SQL de referencia no cambia en la etapa 0.
 
 ## 1. Relaciones
 ```text
@@ -165,7 +167,7 @@ UPDATE customers
 SET name = ?, updated_at = UTC_TIMESTAMP(6)
 WHERE tenant_id = ? AND id = ? AND deleted_at IS NULL;
 ```
-Verificar filas afectadas; si son cero, responder 404 genérico. No utilizar `UPDATE ... RETURNING` (no disponible en MySQL 8).
+Verificar el resultado sin confundir filas modificadas con filas coincidentes: una edición válida sin cambios no debe producir un falso 404. Resolver la existencia con una comprobación acotada al tenant o una configuración del driver verificada para contar coincidencias (ADR-0001). Un recurso ausente, eliminado o de otro tenant recibe 404 genérico. No utilizar `UPDATE ... RETURNING` (no disponible en MySQL 8).
 
 ### Dashboard
 ```sql

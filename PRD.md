@@ -1,9 +1,11 @@
 # PRD — GoPanel Pilot
 
-**Versión:** 1.0 · **Estado:** Especificación inicial · **Producto:** SaaS administrativo multiempresa de referencia
+**Versión:** 1.2 · **Estado:** Especificación conciliada, etapa 0 · **Producto:** SaaS administrativo multiempresa de referencia
+
+Contratos conciliados en [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). Seguimiento: [plan por etapas](docs/plan-de-implementacion.md), [matriz de aceptación](docs/matriz-de-aceptacion.md) y [decisiones pendientes](docs/decisiones-pendientes.md).
 
 ## 1. Visión
-Construir una aplicación real de administración multiempresa para validar el stack Go + Chi + Templ + HTMX + Tailwind + MySQL 8 (sin broker SSE en memoria ni caché) y extraer, posteriormente, componentes reutilizables de tablas, formularios y dashboards. El piloto **no** pretende reproducir Filament completo.
+Construir una aplicación real de administración multiempresa para validar el stack Go + Chi + Templ + HTMX + Tailwind + MySQL 8 (con broker SSE en memoria, una sola instancia Go y sin Redis ni caché de aplicación) y extraer, posteriormente, componentes reutilizables de tablas, formularios y dashboards. El piloto **no** pretende reproducir Filament completo.
 
 ## 2. Problema y oportunidad
 Los sistemas empresariales repiten autenticación, navegación, CRUD, filtros, tablas, autorizaciones y métricas. Se busca comprobar si un enfoque server-rendered reduce complejidad operativa sin sacrificar productividad, seguridad o experiencia de usuario.
@@ -75,7 +77,7 @@ Pagos, facturación, inventario avanzado, pedidos, API pública, apps móviles, 
 - **Observabilidad:** request ID, logs JSON, latencias y errores por endpoint sin PII en etiquetas.
 
 ## 8. Métricas de validación del piloto
-- Tiempo de implementar segundo CRUD usando componentes reutilizados.
+- Tiempo de implementar el segundo CRUD y tiempo de extraer componentes compartidos, registrados por separado; la extracción ocurre después de validar ambos CRUD.
 - LOC de configuración de recurso vs lógica específica.
 - p50/p95, RPS y memoria en escenarios equivalentes.
 - Defectos de aislamiento y autorización (objetivo: cero).
@@ -100,14 +102,14 @@ Comparar con una implementación Laravel + Filament del mismo alcance, misma bas
 ## 11. Riesgos y mitigaciones
 - **Sobreingeniería:** limitar abstracciones a componentes utilizados en ambos CRUD.
 - **Fugas multi-tenant:** tests de repositorio/HTTP y restricciones de datos; revisar cada consulta.
-- **SSE distribuido:** broker SSE en memoria pub/sub entre instancias; fallback a refresco manual.
+- **Pérdida de señales SSE:** una sola instancia Go; broker en memoria sin durabilidad. Al reconectar, refrescar desde MySQL; mantener refresco manual disponible. Varias réplicas quedan fuera de la POC.
 - **Costo de componentes UI:** reutilizar Templ y Tailwind; accesibilidad desde MVP.
 - **Comparación injusta:** mismas historias, datos, hardware y metodología.
 
 ## 12. Preguntas abiertas
-Política final de sesiones (broker SSE en memoria con persistencia adecuada o MySQL 8), mecanismo de recuperación de contraseña, modelo de administración de Platform Admin y estrategia de despliegue de producción. Resolver mediante ADR antes de implementación correspondiente.
+La persistencia de sesiones en MySQL ya está decidida. Permanecen por precisar los tiempos de expiración absoluta e inactividad, recuperación de contraseña, operaciones de Platform Admin, gestión de Owner, normalización de SKU y despliegue de producción. Herramientas y otros contratos operativos se concretan en [decisiones pendientes](docs/decisiones-pendientes.md), mediante ADR antes de la etapa correspondiente. La existencia de una pregunta abierta no incorpora una funcionalidad adicional al MVP.
 
-## 10. Decisiones de alcance de la POC (v1.1)
+## 13. Decisiones de alcance de la POC (ratificadas desde v1.1)
 - No utilizar Redis, Memcached ni caché de aplicación.
 - Persistir sesiones en MySQL 8; invalidarlas al cerrar sesión.
 - SSE mediante un broker en memoria dentro del proceso Go, limitado a **una sola instancia**. La pérdida de eventos al reiniciar es aceptable; el navegador puede recargar el dashboard para recuperar el estado.

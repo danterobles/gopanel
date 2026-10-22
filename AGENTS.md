@@ -58,7 +58,7 @@ Leer, en este orden: `PRD.md`, `ARQUITECTURA.md`, `DATA.md`, luego este archivo.
 - Contraseñas con Argon2id y parámetros revisables; nunca texto plano.
 - CSRF en todas las mutaciones, incluidas las iniciadas por HTMX.
 - Verificar autorización por acción y por recurso en servidor; ocultar botones no reemplaza autorización.
-- Nunca aceptar `tenant_id`, `role` o `user_id` desde formularios para definir el ámbito de seguridad.
+- Nunca usar `tenant_id`, `role` o `user_id` recibidos desde formularios para definir el actor, sus privilegios o el ámbito de una operación de negocio. El selector puede recibir un tenant candidato sujeto a membresía activa verificada; la gestión de miembros puede recibir identificadores objetivo y el rol solicitado, sujetos a autorización y validación del servidor. Ver [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md).
 - Tenant activo derivado de membresía verificada y sesión; prevenir IDOR.
 - Consultas parametrizadas; paginación con límites; allowlists para columnas ordenables y filtrables.
 - Secretos solo por variables de entorno o gestor de secretos; `.env` fuera de git.

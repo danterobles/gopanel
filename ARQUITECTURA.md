@@ -1,6 +1,8 @@
 # ARQUITECTURA — GoPanel Pilot
 
-**Versión:** 1.0 · **Estilo:** monolito modular server-rendered
+**Versión:** 1.1 · **Estilo:** monolito modular server-rendered
+
+Conciliación de contratos: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). Las decisiones aún no tomadas se registran en [decisiones pendientes](docs/decisiones-pendientes.md).
 
 ## 1. Principios
 1. Seguridad y aislamiento por tenant desde la primera migración.
@@ -79,10 +81,10 @@ Makefile
 `GET /app/customers/table?search=&status=&sort=&page=` -> misma autorización -> tabla Templ parcial. La respuesta debe mantener filtros, orden y paginación. Usar `HX-Request` como indicio de representación, **no** como autorización.
 
 ### Mutación
-`POST /app/customers` -> sesión + CSRF + tenant + permiso -> parseo/validación -> servicio/transacción -> auditoría -> respuesta 303 (HTML normal) o fragmento/headers HTMX según contrato. Nunca confiar en campos de control del cliente.
+`POST /app/customers/new` -> sesión + CSRF + tenant + permiso -> parseo/validación -> servicio/transacción -> auditoría -> respuesta 303 (HTML normal) o fragmento/headers HTMX según contrato. Nunca confiar en campos de control del cliente.
 
 ### Tiempo real
-Mutación confirmada -> publicar evento `{type, tenant_id, resource, version}` -> broker en memoria -> SSE `GET /app/events` autenticado y vinculado a tenant -> navegador recibe evento -> HTMX vuelve a solicitar widget/tabla. No incluir PII ni payload completo en evento.
+Mutación confirmada -> publicar evento interno `{type, tenant_id, resource, version}` -> broker en memoria -> SSE `GET /app/events` autenticado y vinculado a tenant -> navegador recibe solo `{type, resource, version}` -> HTMX vuelve a solicitar widget/tabla. No incluir PII ni entidades completas. `version` no garantiza reproducción duradera ni orden global.
 
 ## 6. Rutas de referencia
 | Método | Ruta | Permiso |
@@ -95,11 +97,13 @@ Mutación confirmada -> publicar evento `{type, tenant_id, resource, version}` -
 | GET | `/app/customers` | `customers.read` |
 | GET | `/app/customers/table` | `customers.read` |
 | GET/POST | `/app/customers/new` | `customers.create` |
+| GET | `/app/customers/{id}` | `customers.read` |
 | GET/POST | `/app/customers/{id}/edit` | `customers.update` |
 | POST | `/app/customers/{id}/delete` | `customers.delete` |
 | GET | `/app/products` | `products.read` |
 | GET | `/app/products/table` | `products.read` |
 | GET/POST | `/app/products/new` | `products.create` |
+| GET | `/app/products/{id}` | `products.read` |
 | GET/POST | `/app/products/{id}/edit` | `products.update` |
 | POST | `/app/products/{id}/delete` | `products.delete` |
 | GET | `/app/events` | Autenticado + tenant activo |
@@ -110,6 +114,7 @@ Mutación confirmada -> publicar evento `{type, tenant_id, resource, version}` -
 - `users` global; `tenant_memberships` vincula usuarios, tenants y rol.
 - Tenant activo se resuelve de sesión y se revalida contra membresía en cada petición sensible.
 - Servicios reciben un `ActorContext` (user ID, tenant ID, rol/permisos), construido solo por middleware confiable.
+- El tenant candidato del selector y los datos objetivo de gestión de miembros se validan en servidor; nunca definen el `ActorContext`. Ver ADR-0001. Las rutas de miembros y plataforma se fijarán antes de su implementación, sin inferir endpoints de esta tabla de referencia.
 - Repositorios exigen tenant ID explícito y filtran siempre por él; las actualizaciones/bajas usan `WHERE tenant_id = ? AND id = ?`.
 - MySQL 8 no ofrece RLS equivalente a PostgreSQL: exigir filtros por `tenant_id` en todos los repositorios, pruebas cruzadas y autorización en servidor.
 - Evitar IDs de otro tenant en mensajes de error, eventos, auditoría visible y métricas.
