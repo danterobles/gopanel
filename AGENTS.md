@@ -15,6 +15,16 @@ Leer, en este orden: `PRD.md`, `ARQUITECTURA.md`, `DATA.md`, luego este archivo.
 6. No modificar migraciones ya aplicadas; agregar nuevas migraciones reversibles.
 7. Mantener un registro de decisiones arquitectónicas en `docs/adr/`.
 8. No introducir dependencias, servicios externos ni generadores adicionales sin justificar su necesidad.
+9. Al terminar cada tarea con cambios, crear un commit descriptivo en la rama local de trabajo siguiendo las reglas de la sección «Commits por tarea».
+
+## Commits por tarea
+- Crear un commit local al completar cada tarea con cambios, incluidas las tareas de documentación; no acumular tareas independientes en un mismo commit.
+- Antes del commit, revisar `git status` y el diff, ejecutar las verificaciones aplicables e incluir únicamente los archivos y cambios correspondientes a la tarea. No incluir cambios ajenos ni secretos; no usar `git add .` indiscriminadamente.
+- Usar mensajes descriptivos con el formato `tipo(alcance): descripción`, por ejemplo: `feat(auth): persistir sesiones en MySQL` o `docs(agents): exigir un commit local por tarea`. Explicar el motivo y las validaciones en el cuerpo cuando resulte necesario.
+- Si una verificación falla, corregirla antes de dar la tarea por terminada. Si no puede ejecutarse por una limitación del entorno, documentarlo en el reporte y en el cuerpo del commit; no declarar que pasó.
+- Mantener los commits en la rama local de trabajo; no hacer push, merge ni reescribir el historial sin autorización explícita.
+- No crear commits vacíos si la tarea no produjo cambios. Si el commit está bloqueado por el entorno, informar la causa y los cambios pendientes sin declarar completo el cierre de la tarea.
+- Al cerrar la tarea, informar el hash, el mensaje y la rama del commit creado.
 
 ## Stack obligatorio
 - Go (versión estable compatible con dependencias), `net/http`, `github.com/go-chi/chi/v5`.
@@ -74,6 +84,7 @@ Autenticación, selección de empresa, membresías y RBAC, CRUD de clientes y pr
 - Interfaz accesible por teclado, estados vacíos/error/carga y validación visible.
 - `go test ./...`, `go vet ./...`, `go fmt`/`gofmt` y generación Templ exitosos cuando aplique.
 - Documentación y ejemplo de uso actualizados.
+- Commit descriptivo creado en la rama local con los cambios de la tarea y reportado con su hash.
 
 ## Comandos esperados (crear Makefile)
 `make dev`, `make generate`, `make migrate-up`, `make migrate-down`, `make test`, `make lint`, `make build`, `make seed`.
@@ -82,4 +93,4 @@ Autenticación, selección de empresa, membresías y RBAC, CRUD de clientes y pr
 No implementar editor visual de recursos, ORM propio, generador CLI, sistema de plugins, facturación, suscripciones de pago, permisos configurables por campo, offline-first ni microservicios en MVP.
 
 ## Formato de reporte de Codex
-Al terminar cada tarea: resumen, archivos cambiados, migraciones, pruebas ejecutadas/resultados, riesgos pendientes y siguiente paso recomendado.
+Al terminar cada tarea: resumen, archivos cambiados, migraciones, pruebas ejecutadas/resultados, commit local (hash, mensaje y rama, o motivo por el que no corresponde/no pudo crearse), riesgos pendientes y siguiente paso recomendado.
