@@ -43,6 +43,8 @@ func (h *Handler) Problem(w http.ResponseWriter, r *http.Request, status int, me
 func (h *Handler) Unavailable(w http.ResponseWriter, r *http.Request) { h.failure(w, r) }
 func mutationAction(path string) string {
 	switch {
+	case strings.HasPrefix(path, "/app/products"):
+		return "products.csrf"
 	case strings.HasPrefix(path, "/app/customers"):
 		return "customers.csrf"
 	case strings.HasPrefix(path, "/app/members"):

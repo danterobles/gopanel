@@ -118,13 +118,22 @@ SELECT id,tenant_id,sku,name,description,price_cents,currency,status,created_at,
 FROM products WHERE tenant_id=? AND deleted_at IS NULL
 AND (?='' OR status=?)
 AND (?='' OR name LIKE CONCAT('%',?,'%') ESCAPE '=' OR sku LIKE CONCAT('%',?,'%') ESCAPE '=')
-ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?
+ORDER BY
+ CASE WHEN ?='name_asc' THEN name END ASC,
+ CASE WHEN ?='name_desc' THEN name END DESC,
+ CASE WHEN ?='price_asc' THEN price_cents END ASC,
+ CASE WHEN ?='price_desc' THEN price_cents END DESC,
+ CASE WHEN ?='created_asc' THEN created_at END ASC,
+ CASE WHEN ?='created_desc' THEN created_at END DESC,
+ CASE WHEN (?='name_asc' OR ?='price_asc' OR ?='created_asc') THEN id END ASC,
+ id DESC LIMIT ? OFFSET ?
 `
 
 type ListProductsParams struct {
 	TenantID string
 	Status   string
 	Search   interface{}
+	Sort     interface{}
 	Limit    int32
 	Offset   int32
 }
@@ -137,6 +146,15 @@ func (q *Queries) ListProducts(ctx context.Context, arg ListProductsParams) ([]P
 		arg.Search,
 		arg.Search,
 		arg.Search,
+		arg.Sort,
+		arg.Sort,
+		arg.Sort,
+		arg.Sort,
+		arg.Sort,
+		arg.Sort,
+		arg.Sort,
+		arg.Sort,
+		arg.Sort,
 		arg.Limit,
 		arg.Offset,
 	)

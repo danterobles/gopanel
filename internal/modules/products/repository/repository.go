@@ -26,8 +26,8 @@ type Input struct {
 	Status      string
 }
 type ListOptions struct {
-	Search, Status string
-	Page, PageSize int
+	Search, Status, Sort string
+	Page, PageSize       int
 }
 type Repository struct{ q *dbgen.Queries }
 
@@ -48,6 +48,9 @@ func (r *Repository) Get(ctx context.Context, tenantID, resourceID string) (dbge
 	if tenantID == "" {
 		return dbgen.Product{}, ErrTenantRequired
 	}
+	if !id.Valid(resourceID) {
+		return dbgen.Product{}, ErrNotFound
+	}
 	value, err := r.q.GetProduct(ctx, dbgen.GetProductParams{TenantID: tenantID, ID: resourceID})
 	if errors.Is(err, sql.ErrNoRows) {
 		return value, ErrNotFound
@@ -61,6 +64,9 @@ func (r *Repository) Update(ctx context.Context, tenantID, resourceID string, in
 	if tenantID == "" {
 		return ErrTenantRequired
 	}
+	if !id.Valid(resourceID) {
+		return ErrNotFound
+	}
 	n, err := r.q.UpdateProduct(ctx, dbgen.UpdateProductParams{TenantID: tenantID, ID: resourceID, Sku: input.Sku, Name: input.Name, Description: input.Description, PriceCents: input.PriceCents, Currency: input.Currency, Status: input.Status})
 	if err != nil {
 		return fmt.Errorf("update product: %w", err)
@@ -73,6 +79,9 @@ func (r *Repository) Update(ctx context.Context, tenantID, resourceID string, in
 func (r *Repository) Delete(ctx context.Context, tenantID, resourceID string) error {
 	if tenantID == "" {
 		return ErrTenantRequired
+	}
+	if !id.Valid(resourceID) {
+		return ErrNotFound
 	}
 	n, err := r.q.DeleteProduct(ctx, dbgen.DeleteProductParams{TenantID: tenantID, ID: resourceID, DeletedAt: sql.NullTime{Time: time.Now().UTC(), Valid: true}})
 	if err != nil {
@@ -96,8 +105,19 @@ func (r *Repository) List(ctx context.Context, tenantID string, options ListOpti
 	if options.Page < 1 || (options.PageSize != 10 && options.PageSize != 25 && options.PageSize != 50) || options.Page-1 > math.MaxInt32/options.PageSize || (options.Status != "" && options.Status != "active" && options.Status != "inactive") {
 		return nil, 0, ErrInvalidOptions
 	}
+	if options.Sort == "" {
+		options.Sort = "created_desc"
+	}
+	switch options.Sort {
+	case "created_desc", "created_asc", "name_asc", "name_desc", "price_asc", "price_desc":
+	default:
+		return nil, 0, ErrInvalidOptions
+	}
+	if (options.Page-1)*options.PageSize > 100000 {
+		return nil, 0, ErrInvalidOptions
+	}
 	search := strings.NewReplacer("=", "==", "%", "=%", "_", "=_").Replace(options.Search)
-	items, err := r.q.ListProducts(ctx, dbgen.ListProductsParams{TenantID: tenantID, Status: options.Status, Search: search, Limit: int32(options.PageSize), Offset: int32((options.Page - 1) * options.PageSize)})
+	items, err := r.q.ListProducts(ctx, dbgen.ListProductsParams{TenantID: tenantID, Status: options.Status, Search: search, Sort: options.Sort, Limit: int32(options.PageSize), Offset: int32((options.Page - 1) * options.PageSize)})
 	if err != nil {
 		return nil, 0, fmt.Errorf("list products: %w", err)
 	}

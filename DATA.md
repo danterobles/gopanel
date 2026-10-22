@@ -1,6 +1,6 @@
 # DATA — Modelo de datos GoPanel Pilot
 
-**Versión:** 1.5 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
+**Versión:** 1.6 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
 
 Conciliación: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). El esquema SQL de referencia se implementó en `migrations/000001_initial.up.sql` durante etapa 2; rollback separado y operación nativa según [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md).
 
@@ -218,6 +218,12 @@ Platform Admin opera con permisos de plataforma separados; no obtiene acceso aut
 Miembros: alta por correo exacto normalizado, cuenta activa existente y rol Admin/Viewer; cambios de estado y rol, sin promover a Owner. Owner existente puede conservar su rol o degradarse si queda otro Owner activo. No hay transferencia desde UI ni administración de usuarios globales. `tenant.settings` cambia solo nombre (trim, 1–180 caracteres Unicode). Slug inmutable; alta de empresa admite 3–100 caracteres ASCII minúsculos/números/guiones, extremos alfanuméricos.
 
 La administración global crea empresa + Owner existente de forma atómica, modifica nombre/estado y lista empresas de 25 en 25. Métricas técnicas limitadas al pool SQL, sin datos comerciales. Éxitos globales se auditan con tenant NULL y entidad objetivo; las denegaciones no guardan correos, formularios ni identificadores ajenos. No hay migración nueva en etapa 4.
+
+### Productos implementados en etapa 6
+
+[ADR-0007](docs/adr/0007-productos-sku-precios-y-extraccion.md): SKU trim 1–80 caracteres Unicode, preservando caso/acentos; nombre trim 1–180; descripción opcional hasta 5000 con LF/tab, vacía NULL. UTF-8 válido y controles rechazados. Precio de formulario decimal MXN, hasta dos decimales, convertido con enteros a BIGINT en centavos, de 0 a 9223372036854775807. Sin float ni redondeo. Estado active/inactive y moneda MXN obligatorios.
+
+La unicidad definitiva permanece en el índice generado por tenant con collation utf8mb4_0900_ai_ci: duplicados equivalentes concurrentes producen un éxito y un error de campo 422, sin SQL expuesto; otro tenant y reutilización tras baja permitidos. Filtros por SKU/nombre/estado, seis órdenes parametrizadas y páginas 10/25/50. Lectura en snapshot consistente; mutación, auditoría y comprobación de permisos coordinadas por bloqueo del tenant. Sin nueva migración.
 
 ## 7. Eventos SSE
 - Broker **en memoria del proceso Go**, separado por tenant; no almacenar eventos en MySQL como cola en esta POC.

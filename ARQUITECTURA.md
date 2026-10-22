@@ -1,6 +1,6 @@
 # ARQUITECTURA — GoPanel Pilot
 
-**Versión:** 1.4 · **Estilo:** monolito modular server-rendered
+**Versión:** 1.5 · **Estilo:** monolito modular server-rendered
 
 Conciliación de contratos: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). Las decisiones aún no tomadas se registran en [decisiones pendientes](docs/decisiones-pendientes.md).
 
@@ -89,6 +89,10 @@ Makefile
 
 `internal/modules/customers/{input.go,service.go,handler/,repository/}` separa validación, autorización/transacción, HTTP y SQL. Lecturas usan snapshot consistente; mutaciones bloquean tenant para coordinarse con cambios de miembros. Repositorios acotan UUID y tenant antes de acceder al recurso; errores internos 503 sin SQL ni datos de formulario. El layout amplio de clientes es específico; extracción compartida tras productos. El límite de cuerpo de clientes es 64 KiB por notas Unicode codificadas; autenticación/miembros/plataforma conservan 16 KiB.
 
+### Productos (etapa 6)
+
+[ADR-0007](docs/adr/0007-productos-sku-precios-y-extraccion.md) aplica el mismo contrato HTTP de clientes a productos. Validación monetaria entera y SKU específica del dominio; 1062 se transforma en error de campo sin filtrar SQL. Módulo products conserva servicios/repositorios y consultas explícitas con seis órdenes. Extracción de vistas compartidas únicamente después de pasar ambas baterías CRUD.
+
 ### Tiempo real
 Mutación confirmada -> publicar evento interno `{type, tenant_id, resource, version}` -> broker en memoria -> SSE `GET /app/events` autenticado y vinculado a tenant -> navegador recibe solo `{type, resource, version}` -> HTMX vuelve a solicitar widget/tabla. No incluir PII ni entidades completas. `version` no garantiza reproducción duradera ni orden global.
 
@@ -111,7 +115,7 @@ Mutación confirmada -> publicar evento interno `{type, tenant_id, resource, ver
 | GET/POST | `/app/products/new` | `products.create` |
 | GET | `/app/products/{id}` | `products.read` |
 | GET/POST | `/app/products/{id}/edit` | `products.update` |
-| POST | `/app/products/{id}/delete` | `products.delete` |
+| GET/POST | `/app/products/{id}/delete` | `products.delete` |
 | GET | `/app/events` | Autenticado + tenant activo |
 | GET | `/health/live` | Operación |
 | GET | `/health/ready` | Operación, sin detalles internos |

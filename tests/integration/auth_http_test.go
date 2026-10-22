@@ -27,6 +27,8 @@ import (
 	memberapp "gopanel/internal/modules/members"
 	memberhttp "gopanel/internal/modules/members/handler"
 	members "gopanel/internal/modules/members/repository"
+	productapp "gopanel/internal/modules/products"
+	producthttp "gopanel/internal/modules/products/handler"
 	tenantapp "gopanel/internal/modules/tenants"
 	tenanthttp "gopanel/internal/modules/tenants/handler"
 	"gopanel/internal/platform/auth"
@@ -95,6 +97,7 @@ func newAuthFixture(t *testing.T, secure bool, limit ...int) *authFixture {
 	router := httpserver.NewRouter(db, logger, cfg.HealthTimeout)
 	authHTTP := authhandler.New(service, secure, logger)
 	authHTTP.Register(router)
+	producthttp.New(productapp.New(db), authHTTP).Register(router)
 	customerhttp.New(customerapp.New(db), authHTTP).Register(router)
 	memberhttp.New(memberapp.New(db), authHTTP).Register(router)
 	tenanthttp.New(tenantapp.New(db), authHTTP).Register(router)

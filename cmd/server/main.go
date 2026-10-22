@@ -15,6 +15,8 @@ import (
 	customershandler "gopanel/internal/modules/customers/handler"
 	"gopanel/internal/modules/members"
 	membershandler "gopanel/internal/modules/members/handler"
+	"gopanel/internal/modules/products"
+	productshandler "gopanel/internal/modules/products/handler"
 	"gopanel/internal/modules/tenants"
 	tenantshandler "gopanel/internal/modules/tenants/handler"
 	"gopanel/internal/platform/auth"
@@ -58,6 +60,7 @@ func run(logger *slog.Logger) int {
 	authHTTP := authhandler.New(service, cfg.Env == "production", logger)
 	authHTTP.Register(router)
 	customershandler.New(customers.New(db), authHTTP).Register(router)
+	productshandler.New(products.New(db), authHTTP).Register(router)
 	membershandler.New(members.New(db), authHTTP).Register(router)
 	tenantshandler.New(tenants.New(db), authHTTP).Register(router)
 	maintenanceDone := make(chan struct{})
