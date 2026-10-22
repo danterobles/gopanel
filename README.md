@@ -4,6 +4,8 @@ SaaS administrativo multiempresa en construcción. Etapas 0–8 (validación loc
 
 ## Arranque nativo
 
+Guía paso a paso: [pruebas locales y compilación para macOS, Linux y Windows](docs/guia-local-y-compilacion.md), con destinos Intel/AMD y ARM64.
+
 Requisitos: MySQL 8.0+ (validado localmente con 8.0.40), Go 1.26.10 y Node 22.23.2. El Makefile selecciona el toolchain fijado; npm usa el lockfile.
 
 Crear una base vacía de desarrollo llamada `goconcept`. Copiar `.env.example` a `.env` si todavía no existe y completar `DB_PASSWORD` con la contraseña local. Se usa `root` por la configuración solicitada para este entorno; no se cambia la cuenta del servidor. `.env` es privado, está excluido de Git y sus valores nunca deben copiarse a documentos o comandos versionados. El archivo usa asignaciones shell confiables; entrecomillar valores con caracteres especiales de shell.
