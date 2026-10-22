@@ -1,0 +1,15 @@
+{
+  "name": "gopanel-assets",
+  "private": true,
+  "version": "0.0.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tailwindcss -i web/styles/input.css -o web/static/app.css --minify && node scripts/copy-assets.mjs"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
+    "tailwindcss": "4.3.3",
+    "htmx.org": "2.0.11",
+    "htmx-ext-sse": "2.2.4"
+  }
+}

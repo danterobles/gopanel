@@ -1,6 +1,8 @@
 # Plan de implementación por etapas
 
-Plan autorizado para iniciar por la etapa 0. Fecha: 2026-10-21. El trabajo de esta entrega termina en documentación; no declara iniciadas las etapas siguientes. Las fases orientativas del PRD agrupan estas etapas y su estimación se recalibrará con evidencia del bootstrap.
+Etapas 0 y 1 autorizadas. Fecha: 2026-10-21. Etapa 0 completada; la etapa 1 incorpora el bootstrap ejecutable. No se inicia la etapa 2 en esta entrega. Las fases orientativas del PRD agrupan estas etapas y su estimación se recalibrará con evidencia del bootstrap.
+
+Evidencia de bootstrap: [validación de etapa 1](validacion-etapa-1.md). La ejecución remota de CI queda pendiente; no se confunde con las comprobaciones locales.
 
 ## Secuencia y entregables
 
@@ -31,4 +33,4 @@ Plan autorizado para iniciar por la etapa 0. Fecha: 2026-10-21. El trabajo de es
 - La ausencia de contraparte Laravel/Filament impide concluir el benchmark comparativo, aunque permite medir Go.
 - Valores de política y herramientas todavía abiertos tienen etapas límite en [decisiones pendientes](decisiones-pendientes.md); no bloquean documentación ni trabajo independiente.
 
-La siguiente tarea recomendada es el bootstrap de la etapa 1, comenzando por cerrar D-01 y comprobar las herramientas del entorno antes de introducir dependencias.
+La siguiente tarea recomendada es la etapa 2: migraciones, repositorios y seeds sobre MySQL 8. D-01 está documentada en ADR-0002; el uso real de sqlc y golang-migrate debe validarse con el esquema inicial.

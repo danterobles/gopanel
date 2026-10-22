@@ -6,11 +6,14 @@ Fecha de revisión: 2026-10-21. Este registro distingue contratos ratificados de
 
 Ver [ADR-0001](adr/0001-conciliacion-de-contratos-poc.md): sesiones en MySQL, SSE en memoria para una instancia, ausencia de caché, contexto de seguridad verificado, eventos públicos mínimos, rutas de creación/detalle y actualizaciones sin cambios.
 
+## Decisiones cerradas
+
+- D-01: selección y fijación cerradas en [ADR-0002](adr/0002-herramientas-y-bootstrap.md). Generación SQL y ejecución de migraciones contra MySQL se validarán en etapa 2.
+
 ## Pendientes y etapas límite
 
 | ID | Decisión por cerrar | Límite | Evidencia necesaria para cerrar |
 |---|---|---|---|
-| D-01 | Versiones compatibles de Go, Chi, Templ, HTMX/extensión SSE, Tailwind, driver y sqlc; herramienta de migraciones y mecanismo de fijación | Etapa 1; validar generación SQL en etapa 2 | ADR que justifique dependencias y herramientas, versiones fijadas y generación/compilación reproducible. Comparar Goose y golang-migrate antes de elegir. No instalar generadores adicionales por conveniencia. |
 | D-02 | Expiración absoluta e inactividad, frecuencia de actualización de `last_seen_at`, limpieza y parámetros Argon2id | Antes de implementar autenticación, etapa 3 | ADR con valores y variables de configuración, validaciones y pruebas de límites temporales; parámetros Argon2id justificados y medidos en el entorno objetivo. No se cambia la decisión de persistir sesiones en MySQL. |
 | D-03 | Recuperación de contraseña: incluir un flujo concreto o diferirlo explícitamente | Antes de cerrar identidad, etapa 3 | Decisión de producto documentada; no asumir correo, proveedor externo ni tokens de recuperación. Login/logout no implican automáticamente recuperación. |
 | D-04 | Operaciones de Platform Admin y alcance de `tenant.settings` | Antes del módulo de administración, etapa 4 | Enumerar operaciones, campos, rutas, permisos y auditoría. El PRD exige administrar tenants y consultar métricas técnicas; no autoriza impersonación ni acceso comercial automático. Decidir qué resuelve seed y qué requiere interfaz. |

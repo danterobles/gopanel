@@ -40,7 +40,7 @@ Go / Chi
 | Sesiones | Tabla MySQL `sessions` | Persistencia y revocación sin servicio adicional |
 | Tiempo real | SSE + broker en memoria | Eventos unidireccionales para una sola instancia |
 | Gráficas | Librería JS pequeña (opcional) | Visualización, no lógica de negocio |
-| Migraciones | Goose o golang-migrate (fijar en ADR) | Migraciones SQL versionadas |
+| Migraciones | golang-migrate 4.20.1 (ADR-0002) | SQL up/down separado; ejecución desde etapa 2 |
 
 ## 4. Organización sugerida
 ```text

@@ -1,0 +1,56 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0.45@sha256:4af1f8815716546f5b12410f7621f37f93db8dd11a184706ef59111930b8c2ff
+        env:
+          MYSQL_DATABASE: gopanel
+          MYSQL_USER: gopanel
+          MYSQL_PASSWORD: ci-only-password
+          MYSQL_ROOT_PASSWORD: ci-only-root-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: .go-version
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: make generate
+      - run: git diff --exit-code
+      - run: make lint test build
+      - run: go test -race ./...
+      - run: make test-integration
+        env:
+          DB_PASSWORD: ci-only-password
+      - name: Compose build and smoke
+        run: |
+          docker compose up --build -d --wait --wait-timeout 180
+          python3 scripts/smoke.py --base-url http://127.0.0.1:18080
+        env:
+          DB_PASSWORD: ci-compose-password
+          MYSQL_ROOT_PASSWORD: ci-compose-root-password
+          DB_PORT: "13306"
+          APP_PORT: "18080"
+      - name: Stop Compose
+        if: always()
+        run: docker compose down
+        env:
+          DB_PASSWORD: ci-compose-password
+          MYSQL_ROOT_PASSWORD: ci-compose-root-password
+          DB_PORT: "13306"
+          APP_PORT: "18080"
