@@ -1,6 +1,6 @@
 # Plan de implementación por etapas
 
-Etapas 0–7 autorizadas y completadas localmente. Actualizado: 2026-10-22. La etapa 7 incorpora dashboard y SSE sobre MySQL nativo. No se inicia etapa 8 en esta entrega. Las fases orientativas del PRD agrupan estas etapas; estimación sujeta a evidencia.
+Etapas 0–8 autorizadas. Etapas 0–7 completas y etapa 8 validada en el alcance local confirmado por el usuario; despliegue/comparación conservan pendientes externos. Actualizado: 2026-10-22. Las fases orientativas del PRD agrupan estas etapas; estimación sujeta a evidencia.
 
 Evidencia de bootstrap: [validación de etapa 1](validacion-etapa-1.md). La ejecución remota de CI queda pendiente; no se confunde con las comprobaciones locales.
 
@@ -33,4 +33,4 @@ Evidencia de bootstrap: [validación de etapa 1](validacion-etapa-1.md). La ejec
 - La ausencia de contraparte Laravel/Filament impide concluir el benchmark comparativo, aunque permite medir Go.
 - Valores de política y herramientas todavía abiertos tienen etapas límite en [decisiones pendientes](decisiones-pendientes.md); no bloquean documentación ni trabajo independiente.
 
-Etapas 0–7 completadas localmente. D-04/D-05 cerradas por ADR-0005; D-06 para clientes/productos por ADR-0006/0007. D-07/D-08 cerradas por ADR-0008; evidencia en [validación de etapa 7](validacion-etapa-7.md). Los tiempos del segundo CRUD y extracción permanecen registrados por separado. Siguiente tarea: etapa 8, E2E/observabilidad/operación/carga y comparación; resolver D-09/D-10 antes de sus trabajos dependientes. La ejecución remota de CI y la validación operativa integral siguen pendientes.
+Etapas 0–7 completadas localmente. D-04/D-05 cerradas por ADR-0005; D-06 para clientes/productos por ADR-0006/0007. D-07/D-08 cerradas por ADR-0008; evidencia en [validación de etapa 7](validacion-etapa-7.md). Los tiempos del segundo CRUD y extracción permanecen registrados por separado. Etapa 8 local validada según [reporte](validacion-etapa-8.md), ADR-0009/0010: E2E, métricas, ensayo de recuperación, carga y runbooks. Próximo paso: pruebas del usuario y definición de destino/contraparte; D-09/D-10 parcialmente resueltas, sin declarar operación pública o comparación completa. CI remota y Compose conservan validación pendiente.

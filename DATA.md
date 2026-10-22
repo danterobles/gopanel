@@ -1,6 +1,6 @@
 # DATA — Modelo de datos GoPanel Pilot
 
-**Versión:** 1.7 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
+**Versión:** 1.8 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
 
 Conciliación: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). El esquema SQL de referencia se implementó en `migrations/000001_initial.up.sql` durante etapa 2; rollback separado y operación nativa según [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md).
 
@@ -251,3 +251,7 @@ La unicidad definitiva permanece en el índice generado por tenant con collation
 - Usar `EXPLAIN ANALYZE` de MySQL 8 para validar consultas e índices antes de optimizar.
 - MySQL 8 no tiene índices parciales ni RLS equivalente a PostgreSQL; reforzar aislamiento por repositorio y pruebas.
 - No incorporar Redis ni capa de caché sin una decisión de alcance posterior.
+
+## 10. Validación de recuperación y observabilidad local
+
+Etapa 8 conserva esquema 2 sin migraciones nuevas. Exportación mysqldump privada y restauración en base temporal vacía verifican nueve tablas por conteo/digest y login con los hashes recuperados; no se usa goconcept como destino. Contadores HTTP/SSE en memoria son telemetría de proceso, no caché comercial ni cola de negocio. No llevan etiquetas de usuario/tenant. Detalles y límites en ADR-0009 y validación de etapa 8.

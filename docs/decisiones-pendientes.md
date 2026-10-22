@@ -1,6 +1,6 @@
 # Decisiones pendientes
 
-Fecha de revisión: 2026-10-21. Este registro distingue contratos ratificados de decisiones todavía abiertas. No añade funcionalidades al MVP. Cada decisión debe cerrarse en un ADR y reflejarse en las especificaciones antes de implementar el contrato afectado. Se puede avanzar en trabajo independiente.
+Fecha de revisión: 2026-10-22. Este registro distingue contratos ratificados de decisiones todavía abiertas. No añade funcionalidades al MVP. Cada decisión debe cerrarse en un ADR y reflejarse en las especificaciones antes de implementar el contrato afectado. Se puede avanzar en trabajo independiente.
 
 ## Contratos ratificados
 
@@ -26,7 +26,7 @@ Ver [ADR-0001](adr/0001-conciliacion-de-contratos-poc.md): sesiones en MySQL, SS
 
 | ID | Decisión por cerrar | Límite | Evidencia necesaria para cerrar |
 |---|---|---|---|
-| D-09 | Destino de producción, TLS/proxy, acceso a métricas, backups y restauración | Antes de despliegue fuera de desarrollo, como máximo etapa 8 | Runbook y ADR de despliegue de una instancia, secretos por entorno, cookies seguras, protección de endpoints operativos, retención de backups y restauración comprobada. Compose sigue siendo obligatorio. |
-| D-10 | Implementación equivalente Laravel/Filament y protocolo de benchmark | Preparar medición en etapas 5/6; cerrar comparación en etapa 8 | Confirmar disponibilidad o alcance de construcción de la contraparte. Mismas historias, MySQL, dataset, hardware, calentamiento y carga. Si falta, reportar mediciones Go y comparación pendiente; no declarar cumplida la comparación. |
+| D-09 (parcial) | Destino real/TLS/proxy/certificados, backup cifrado externo/retención y RPO/RTO | Antes de despliegue fuera de desarrollo | ADR-0009 y runbook entregados; métricas protegidas y restauración autenticable verificadas localmente. Usuario confirma que aún no hay destino. Falta validar la instalación real y Compose/CI remota. |
+| D-10 (parcial) | Contraparte Laravel/Filament y comparación ejecutada | Antes de emitir conclusiones comparativas | Usuario confirma contraparte inexistente; protocolo y medición Go entregados (ADR-0009/0010). Falta implementación equivalente y repetir ambos bajo mismo protocolo. No se declara comparación cumplida. |
 
 No hay valores finales ni aprobación implícita de nuevas funciones en esta tabla. Los bloqueos solo afectan la parte que depende de la decisión; deben comunicarse antes de implementarla.

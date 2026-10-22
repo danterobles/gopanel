@@ -1,6 +1,6 @@
 # GoPanel Pilot
 
-SaaS administrativo multiempresa en construcción. Etapas 0–7: bootstrap, persistencia, identidad, permisos, miembros, CRUD de clientes/productos, componentes Templ compartidos, dashboard y SSE. El desarrollo local usa Go, Node y MySQL nativos. SSE opera en una única instancia Go, sin Redis ni caché.
+SaaS administrativo multiempresa en construcción. Etapas 0–8 (validación local): bootstrap, persistencia, identidad, permisos, miembros, CRUD de clientes/productos, componentes Templ compartidos, dashboard, SSE, métricas, E2E y recuperación. El desarrollo local usa Go, Node y MySQL nativos. SSE opera en una única instancia Go, sin Redis ni caché.
 
 ## Arranque nativo
 
@@ -105,6 +105,10 @@ El proceso limpia sesiones vencidas/ociosas y buckets de intentos de más de 24h
 
 La recuperación automática de contraseña está diferida (D-03); no existe ruta de reset ni se añadió correo. Un Platform Admin sin membresías no accede a empresas comerciales.
 
+## Usuarios para probar
+
+Ver [cuentas y recorridos locales](docs/pruebas-locales.md). `shared@gopanel.test` es Admin en Norte y Viewer en Sur; hay Owner/Admin/Viewer individuales por empresa y `platform@gopanel.test` para administración global. Contraseñas en `.local/seed-credentials.json`, distintas de MySQL; no se han restablecido. Para usuarios simultáneos usar contextos/perfiles separados, porque las pestañas comparten cookie.
+
 ## Miembros y administración
 
 Desde `/app`, Owner/Admin acceden a `/app/members`; solo Owner agrega cuentas existentes por correo y asigna Admin/Viewer o cambia su estado. Viewer recibe 403 incluso con HTTP manual. El Owner inicial se crea con seed o alta de empresa; la interfaz no promueve a Owner ni transfiere propiedad. No puede degradarse/desactivarse el último Owner activo, aun con solicitudes concurrentes. Los cambios efectivos revocan todas las sesiones del usuario objetivo: deberá volver a ingresar. Guardar sin cambios conserva las sesiones.
@@ -147,6 +151,14 @@ Streams y refrescos de fondo no renuevan la sesión. SSE verifica autorización 
 
 Contrato y pruebas: [ADR-0008](docs/adr/0008-dashboard-utc-y-ciclo-sse.md) y [validación de etapa 7](docs/validacion-etapa-7.md). Sin nuevas dependencias o migraciones.
 
+## Validación operativa local
+
+`make test-e2e` ejecuta el binario real con bases MySQL temporales, incluyendo HTMX/SSE, reinicio, miembros y ensayo de backup/restauración con login. `make bench` mide 50 sesiones independientes sobre 10 000 registros por recurso/empresa; ejecutarlo sin otras pruebas en paralelo. [Resultado Go](docs/benchmark-go.md): p95 clientes 286.38 ms y productos 287.91 ms en una muestra controlada, sin comparación Laravel ni garantía de producción. `python3 scripts/count-loc.py` separa código escrito y generado.
+
+`make backup` crea un snapshot privado nuevo de la base configurada, sin sobrescribir. La restauración automatizada solo se ensaya en destinos temporales vacíos. [Runbook](docs/operacion.md), [protocolo](docs/protocolo-benchmark.md) y [validación de etapa 8](docs/validacion-etapa-8.md) documentan comandos, evidencias y límites. No se ejecutaron down, carga ni restauración contra goconcept.
+
+Platform Admin puede consultar `/platform/metrics` desde el enlace de Administración: histogramas/contadores HTTP acotados, memoria Go, pool SQL y estado global SSE. Requiere autorización en cada petición; no expone PII ni identificadores como etiquetas. La telemetría se reinicia con Go y no sustituye un backend de monitoreo.
+
 ## Alternativa Compose
 
 Se conserva para reproducibilidad, sin usarla para validar esta etapa local. Copiar `.env.compose.example` a `.env.compose` y definir contraseñas privadas distintas; no reutilizar el `.env` nativo de root como `MYSQL_USER` del contenedor. El ejemplo usa MySQL 13306 para evitar colisionar con el servidor local.
@@ -162,6 +174,6 @@ CI está preparado para generación reproducible, formato/vet, tests, integraci�
 
 ## Seguimiento
 
-Leer [PRD](PRD.md), [arquitectura](ARQUITECTURA.md), [datos](DATA.md), [AGENTS](AGENTS.md), [plan](docs/plan-de-implementacion.md) y [aceptación](docs/matriz-de-aceptacion.md). Decisiones: [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md), [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md), [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md), [ADR-0006](docs/adr/0006-clientes-validacion-y-flujos-http.md), [ADR-0007](docs/adr/0007-productos-sku-precios-y-extraccion.md), [ADR-0008](docs/adr/0008-dashboard-utc-y-ciclo-sse.md), [pendientes](docs/decisiones-pendientes.md). Evidencia: [etapa 1](docs/validacion-etapa-1.md) [etapa 2](docs/validacion-etapa-2.md) [etapa 3](docs/validacion-etapa-3.md) [etapa 4](docs/validacion-etapa-4.md) [etapa 5](docs/validacion-etapa-5.md) [etapa 6](docs/validacion-etapa-6.md) y [etapa 7](docs/validacion-etapa-7.md).
+Leer [PRD](PRD.md), [arquitectura](ARQUITECTURA.md), [datos](DATA.md), [AGENTS](AGENTS.md), [plan](docs/plan-de-implementacion.md) y [aceptación](docs/matriz-de-aceptacion.md). Decisiones: [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md), [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md), [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md), [ADR-0006](docs/adr/0006-clientes-validacion-y-flujos-http.md), [ADR-0007](docs/adr/0007-productos-sku-precios-y-extraccion.md), [ADR-0008](docs/adr/0008-dashboard-utc-y-ciclo-sse.md), [pendientes](docs/decisiones-pendientes.md). Evidencia: [etapa 1](docs/validacion-etapa-1.md) [etapa 2](docs/validacion-etapa-2.md) [etapa 3](docs/validacion-etapa-3.md) [etapa 4](docs/validacion-etapa-4.md) [etapa 5](docs/validacion-etapa-5.md) [etapa 6](docs/validacion-etapa-6.md) [etapa 7](docs/validacion-etapa-7.md) y [etapa 8](docs/validacion-etapa-8.md).
 
-Siguiente etapa: 8, E2E, observabilidad, carga, operación y benchmark. TLS/proxy/backups y la contraparte Laravel/Filament siguen en D-09/D-10.
+Cierre local de etapa 8 realizado. Siguiente paso: probar con las cuentas locales y acordar destino de despliegue y contraparte cuando existan. D-09/D-10 conservan pendientes externos de operación y comparación; CI remota, Docker y auditoría WCAG formal no se han validado aquí.

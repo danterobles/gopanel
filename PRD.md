@@ -1,6 +1,6 @@
 # PRD — GoPanel Pilot
 
-**Versión:** 1.7 · **Estado:** Etapa 7 completa: dashboard y SSE validados localmente · **Producto:** SaaS administrativo multiempresa de referencia
+**Versión:** 1.8 · **Estado:** Etapa 8 validada localmente; despliegue y comparación pendientes · **Producto:** SaaS administrativo multiempresa de referencia
 
 Contratos conciliados en [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). Seguimiento: [plan por etapas](docs/plan-de-implementacion.md), [matriz de aceptación](docs/matriz-de-aceptacion.md) y [decisiones pendientes](docs/decisiones-pendientes.md).
 
@@ -110,7 +110,7 @@ Comparar con una implementación Laravel + Filament del mismo alcance, misma bas
 - **Comparación injusta:** mismas historias, datos, hardware y metodología.
 
 ## 12. Preguntas abiertas
-Persistencia, política de sesiones y Argon2id están decididas en [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md): máximo 12 h, inactividad 30 min y touch cada 1 min por defecto; recuperación automática diferida. D-04/D-05 se cierran en [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md): gestión de miembros Admin/Viewer, Owner de bootstrap, configuración del nombre de empresa y administración global de empresas/métricas del pool SQL. No se habilita transferencia de Owner. D-06 de clientes se cierra mediante ADR-0006, con flujos HTML/HTMX y validación implementados. D-06 de productos se cierra mediante ADR-0007; D-07/D-08 de dashboard/SSE se cierran mediante ADR-0008. Despliegue y benchmark siguen pendientes de etapa 8. Herramientas y otros contratos operativos se concretan en [decisiones pendientes](docs/decisiones-pendientes.md), mediante ADR antes de la etapa correspondiente. La existencia de una pregunta abierta no incorpora una funcionalidad adicional al MVP.
+Persistencia, política de sesiones y Argon2id están decididas en [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md): máximo 12 h, inactividad 30 min y touch cada 1 min por defecto; recuperación automática diferida. D-04/D-05 se cierran en [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md): gestión de miembros Admin/Viewer, Owner de bootstrap, configuración del nombre de empresa y administración global de empresas/métricas del pool SQL. No se habilita transferencia de Owner. D-06 de clientes se cierra mediante ADR-0006, con flujos HTML/HTMX y validación implementados. D-06 de productos se cierra mediante ADR-0007; D-07/D-08 de dashboard/SSE se cierran mediante ADR-0008. ADR-0009 registra validación/operación local y la falta confirmada de destino y contraparte; ADR-0010 documenta la optimización medida. La medición Go está ejecutada, pero despliegue real y comparación Laravel/Filament permanecen pendientes. Herramientas y otros contratos operativos se concretan en [decisiones pendientes](docs/decisiones-pendientes.md), mediante ADR antes de la etapa correspondiente. La existencia de una pregunta abierta no incorpora una funcionalidad adicional al MVP.
 
 ## 13. Decisiones de alcance de la POC (ratificadas desde v1.1)
 - No utilizar Redis, Memcached ni caché de aplicación.
@@ -118,3 +118,7 @@ Persistencia, política de sesiones y Argon2id están decididas en [ADR-0004](do
 - SSE mediante un broker en memoria dentro del proceso Go, limitado a **una sola instancia**. La pérdida de eventos al reiniciar es aceptable; el navegador puede recargar el dashboard para recuperar el estado.
 - Todas las métricas y listados se consultan directamente en MySQL, sin almacenamiento intermedio.
 - Una arquitectura distribuida, pub/sub externo y caché quedan expresamente para fases posteriores.
+
+## 14. Evidencia de cierre local
+
+[Validación de etapa 8](docs/validacion-etapa-8.md) registra unitarias/integración con carreras, E2E del binario HTTP/MySQL, recuperación autenticable, revisión de navegador y carga local. [Resultado Go](docs/benchmark-go.md): p95 286.38 ms clientes y 287.91 ms productos bajo el protocolo acotado del PRD; una muestra por recurso, sin garantía de producción. Métricas operativas autenticadas, runbook y cuentas de prueba documentados. No se declara operación pública ni comparación de stacks completada.

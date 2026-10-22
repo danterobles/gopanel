@@ -1,6 +1,6 @@
 # ARQUITECTURA — GoPanel Pilot
 
-**Versión:** 1.6 · **Estilo:** monolito modular server-rendered
+**Versión:** 1.7 · **Estilo:** monolito modular server-rendered
 
 Conciliación de contratos: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). Las decisiones aún no tomadas se registran en [decisiones pendientes](docs/decisiones-pendientes.md).
 
@@ -123,6 +123,7 @@ Mutación confirmada -> publicar evento interno `{type, tenant_id, resource, ver
 | GET/POST | `/app/products/{id}/delete` | `products.delete` |
 | GET | `/app/dashboard/widgets` | `dashboard.read`; sesión pasiva |
 | GET | `/app/events` | Sesión/membresía revalidadas y rol comercial; sin redirects HTML |
+| GET | `/platform/metrics` | Platform Admin activo; sin acceso comercial implícito |
 | GET | `/health/live` | Operación |
 | GET | `/health/ready` | Operación, sin detalles internos |
 
@@ -185,3 +186,13 @@ Widgets de estadísticas y serie temporal; consultas agregadas por tenant; refre
 
 ## 13. Evolución posterior
 Extraer `Table`, `Form`, `Resource` y `Policy` como biblioteca pública únicamente tras demostrar reutilización en dos módulos. No prometer API estable antes de validarla.
+
+## 11. Validación y operación local (etapa 8)
+
+[ADR-0009](docs/adr/0009-validacion-local-y-operacion.md) delimita E2E HTTP de binario real, recuperación y medición nativas con bases temporales. `platform/observability` mantiene contadores/histogramas acotados de proceso, no caché de negocio. `/platform/metrics` requiere sesión y flag global activo, con pool SQL, memoria y estado agregado SSE sin etiquetas de tenant/usuario. Los abortos liberan el gauge mediante defer. Logs mantienen request ID/ruta/status/duración sin cuerpo/query/cookie.
+
+`platform/backup` y `cmd/backup` exportan consistentemente a archivos privados y rechazan sobrescritura. RestoreTemporary solo acepta bases temporales vacías para dumps confiables de pruebas; el ensayo compara tablas y autentica sobre la copia. Makefile y CI incluyen el recorrido nativo. La revisión de navegador complementa la suite HTTP y no se presenta como certificación WCAG.
+
+[ADR-0010](docs/adr/0010-orden-reciente-medido.md) selecciona consultas sqlc estáticas para created_desc usando el índice existente; conserva CASE en otros órdenes. Se midió antes/después y verificó paridad de filtros/estado/empates/páginas entre tenants. Sin nuevas migraciones, pool ampliado o caché.
+
+Destino público/TLS/proxy/backup remoto y comparación Laravel/Filament siguen pendientes de datos externos confirmados por el usuario. Runbook propuesto, protocolo y resultados locales no equivalen a despliegue verificado.
