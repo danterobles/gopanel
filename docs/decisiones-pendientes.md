@@ -13,12 +13,13 @@ Ver [ADR-0001](adr/0001-conciliacion-de-contratos-poc.md): sesiones en MySQL, SS
 - D-02: cerrada mediante [ADR-0004](adr/0004-autenticacion-sesiones-y-csrf.md); parámetros, variables y medición local en validación de etapa 3.
 - D-03: recuperación automática diferida explícitamente mediante ADR-0004; no se añade proveedor de correo ni flujo de reset.
 
+- D-04: cerrada mediante [ADR-0005](adr/0005-permisos-miembros-y-plataforma.md): Owner edita nombre; Platform Admin administra empresas y consulta métricas del pool SQL, sin acceso comercial implícito.
+- D-05: cerrada mediante ADR-0005: alta por correo exacto de cuenta existente activa, roles Admin/Viewer, Owner inicial de bootstrap y sin transferencia/promoción desde UI. Invariante, auditoría y revocación transaccionales.
+
 ## Pendientes y etapas límite
 
 | ID | Decisión por cerrar | Límite | Evidencia necesaria para cerrar |
 |---|---|---|---|
-| D-04 | Operaciones de Platform Admin y alcance de `tenant.settings` | Antes del módulo de administración, etapa 4 | Enumerar operaciones, campos, rutas, permisos y auditoría. El PRD exige administrar tenants y consultar métricas técnicas; no autoriza impersonación ni acceso comercial automático. Decidir qué resuelve seed y qué requiere interfaz. |
-| D-05 | Alta de miembros existentes y política de asignación/transferencia de Owner | Antes de gestión de membresías, etapa 4 | Definir identificación del usuario objetivo sin filtrar cuentas globales, operaciones/rutas y tratamiento del rol Owner. US-03 garantiza Admin/Viewer; no inferir permisos adicionales. Mantener bloqueo transaccional y protección del último Owner. Invitaciones por correo fuera del MVP. |
 | D-06 | Validación y normalización de campos de clientes/productos, especialmente SKU | Antes del CRUD correspondiente, etapas 5 y 6 | Reglas para longitudes, espacios, campos opcionales y búsquedas literales. Definir normalización de SKU y probar collation insensible a mayúsculas/acentos, unicidad y reutilización tras baja. Mantener MXN y centavos enteros. |
 | D-07 | Límites de los 30 días del dashboard | Antes de consultas del dashboard, etapa 7 | Precisar ventana móvil o días calendario, límites inclusivos/exclusivos, agrupación UTC y exclusión de bajas lógicas; pruebas de frontera y días sin registros. UTC de persistencia ya es obligatorio. |
 | D-08 | Ciclo de autorización de conexiones SSE y configuración operativa del broker | Antes de SSE, etapa 7 | Definir cómo cerrar/revalidar streams al expirar o revocar sesión, membresía o tenant y al cambiar empresa; límites de suscriptores/buffers, clientes lentos, heartbeat y reconexión. Probar que una conexión larga no conserva acceso revocado. Sin reproducción duradera. |

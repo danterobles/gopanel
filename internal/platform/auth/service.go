@@ -83,6 +83,9 @@ func (s *Service) Denied(ctx context.Context, action, requestID string, p *Princ
 	if p != nil {
 		user, tenant = p.UserID(), p.TenantID()
 	}
+	if strings.HasPrefix(action, "platform.") {
+		tenant = ""
+	}
 	if err := writeAudit(ctx, dbgen.New(s.db), user, tenant, action, "denied", requestID); err != nil {
 		return fmt.Errorf("audit denied authentication action: %w", err)
 	}
@@ -340,4 +343,13 @@ func (s *Service) Maintain(ctx context.Context, logger *slog.Logger) {
 			}
 		}
 	}
+}
+
+// PlatformAdmin reads the current global flag; it never implies a tenant membership.
+func (s *Service) PlatformAdmin(ctx context.Context, p Principal) (bool, error) {
+	value, err := dbgen.New(s.db).IsPlatformAdmin(ctx, p.UserID())
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, ErrUnauthorized
+	}
+	return value, err
 }

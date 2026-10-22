@@ -11,6 +11,10 @@ import (
 	"time"
 
 	"gopanel/internal/config"
+	"gopanel/internal/modules/members"
+	membershandler "gopanel/internal/modules/members/handler"
+	"gopanel/internal/modules/tenants"
+	tenantshandler "gopanel/internal/modules/tenants/handler"
 	"gopanel/internal/platform/auth"
 	authhandler "gopanel/internal/platform/auth/handler"
 	"gopanel/internal/platform/database"
@@ -49,7 +53,10 @@ func run(logger *slog.Logger) int {
 	defer stop()
 	service := auth.New(db, cfg, nil)
 	router := httpserver.NewRouter(db, logger, cfg.HealthTimeout)
-	authhandler.New(service, cfg.Env == "production", logger).Register(router)
+	authHTTP := authhandler.New(service, cfg.Env == "production", logger)
+	authHTTP.Register(router)
+	membershandler.New(members.New(db), authHTTP).Register(router)
+	tenantshandler.New(tenants.New(db), authHTTP).Register(router)
 	maintenanceDone := make(chan struct{})
 	go func() { defer close(maintenanceDone); service.Maintain(ctx, logger) }()
 	defer func() { stop(); <-maintenanceDone }()

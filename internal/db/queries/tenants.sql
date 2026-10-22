@@ -25,3 +25,20 @@ WHERE m.tenant_id=? AND m.role='owner' AND m.is_active=TRUE AND u.is_active=TRUE
 
 -- name: UpdateMembership :execrows
 UPDATE tenant_memberships SET role=?,is_active=? WHERE tenant_id=? AND id=?;
+
+-- name: ListMemberDetails :many
+SELECT m.id,m.user_id,m.role,m.is_active,u.display_name,u.email,u.is_active AS user_active
+FROM tenant_memberships m JOIN users u ON u.id=m.user_id
+WHERE m.tenant_id=? ORDER BY m.created_at,m.id LIMIT ? OFFSET ?;
+
+-- name: UpdateTenantName :execrows
+UPDATE tenants SET name=? WHERE id=? AND is_active=TRUE;
+
+-- name: ListPlatformTenants :many
+SELECT id,name,slug,is_active,created_at,updated_at FROM tenants ORDER BY created_at,id LIMIT ? OFFSET ?;
+
+-- name: UpdatePlatformTenant :execrows
+UPDATE tenants SET name=?,is_active=? WHERE id=?;
+
+-- name: LockAnyTenant :one
+SELECT id FROM tenants WHERE id=? FOR UPDATE;

@@ -119,6 +119,59 @@ func (q *Queries) GetTenantBySlug(ctx context.Context, slug string) (Tenant, err
 	return i, err
 }
 
+const listMemberDetails = `-- name: ListMemberDetails :many
+SELECT m.id,m.user_id,m.role,m.is_active,u.display_name,u.email,u.is_active AS user_active
+FROM tenant_memberships m JOIN users u ON u.id=m.user_id
+WHERE m.tenant_id=? ORDER BY m.created_at,m.id LIMIT ? OFFSET ?
+`
+
+type ListMemberDetailsParams struct {
+	TenantID string
+	Limit    int32
+	Offset   int32
+}
+
+type ListMemberDetailsRow struct {
+	ID          string
+	UserID      string
+	Role        string
+	IsActive    bool
+	DisplayName string
+	Email       string
+	UserActive  bool
+}
+
+func (q *Queries) ListMemberDetails(ctx context.Context, arg ListMemberDetailsParams) ([]ListMemberDetailsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listMemberDetails, arg.TenantID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListMemberDetailsRow{}
+	for rows.Next() {
+		var i ListMemberDetailsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Role,
+			&i.IsActive,
+			&i.DisplayName,
+			&i.Email,
+			&i.UserActive,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listMemberships = `-- name: ListMemberships :many
 SELECT id,tenant_id,user_id,role,is_active,created_at,updated_at FROM tenant_memberships WHERE tenant_id=? ORDER BY created_at,id
 `
@@ -154,6 +207,56 @@ func (q *Queries) ListMemberships(ctx context.Context, tenantID string) ([]Tenan
 	return items, nil
 }
 
+const listPlatformTenants = `-- name: ListPlatformTenants :many
+SELECT id,name,slug,is_active,created_at,updated_at FROM tenants ORDER BY created_at,id LIMIT ? OFFSET ?
+`
+
+type ListPlatformTenantsParams struct {
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) ListPlatformTenants(ctx context.Context, arg ListPlatformTenantsParams) ([]Tenant, error) {
+	rows, err := q.db.QueryContext(ctx, listPlatformTenants, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Tenant{}
+	for rows.Next() {
+		var i Tenant
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Slug,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lockAnyTenant = `-- name: LockAnyTenant :one
+SELECT id FROM tenants WHERE id=? FOR UPDATE
+`
+
+func (q *Queries) LockAnyTenant(ctx context.Context, id string) (string, error) {
+	row := q.db.QueryRowContext(ctx, lockAnyTenant, id)
+	var id_2 string
+	err := row.Scan(&id_2)
+	return id_2, err
+}
+
 const lockTenant = `-- name: LockTenant :one
 SELECT id FROM tenants WHERE id=? AND is_active=TRUE FOR UPDATE
 `
@@ -183,6 +286,41 @@ func (q *Queries) UpdateMembership(ctx context.Context, arg UpdateMembershipPara
 		arg.TenantID,
 		arg.ID,
 	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const updatePlatformTenant = `-- name: UpdatePlatformTenant :execrows
+UPDATE tenants SET name=?,is_active=? WHERE id=?
+`
+
+type UpdatePlatformTenantParams struct {
+	Name     string
+	IsActive bool
+	ID       string
+}
+
+func (q *Queries) UpdatePlatformTenant(ctx context.Context, arg UpdatePlatformTenantParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updatePlatformTenant, arg.Name, arg.IsActive, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const updateTenantName = `-- name: UpdateTenantName :execrows
+UPDATE tenants SET name=? WHERE id=? AND is_active=TRUE
+`
+
+type UpdateTenantNameParams struct {
+	Name string
+	ID   string
+}
+
+func (q *Queries) UpdateTenantName(ctx context.Context, arg UpdateTenantNameParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateTenantName, arg.Name, arg.ID)
 	if err != nil {
 		return 0, err
 	}

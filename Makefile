@@ -2,7 +2,7 @@ include tools/versions.mk
 export GOTOOLCHAIN := go1.26.10
 GO ?= go
 
-.PHONY: dev generate assets test test-integration lint fmt build migrate-up migrate-down seed smoke dev-compose generate-sql compose-migrate-up smoke-auth
+.PHONY: dev generate assets test test-integration lint fmt build migrate-up migrate-down seed smoke dev-compose generate-sql compose-migrate-up smoke-auth smoke-rbac
 
 dev: build
 	sh scripts/with-env.sh ./bin/gopanel
@@ -54,3 +54,6 @@ smoke:
 
 smoke-auth: build
 	sh scripts/with-env.sh python3 scripts/smoke-auth-native.py
+
+smoke-rbac: build
+	sh scripts/with-env.sh python3 scripts/smoke-rbac-native.py

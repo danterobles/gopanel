@@ -22,7 +22,11 @@ import (
 
 	"gopanel/internal/config"
 	dbgen "gopanel/internal/db/generated"
+	memberapp "gopanel/internal/modules/members"
+	memberhttp "gopanel/internal/modules/members/handler"
 	members "gopanel/internal/modules/members/repository"
+	tenantapp "gopanel/internal/modules/tenants"
+	tenanthttp "gopanel/internal/modules/tenants/handler"
 	"gopanel/internal/platform/auth"
 	authhandler "gopanel/internal/platform/auth/handler"
 	"gopanel/internal/platform/auth/password"
@@ -87,7 +91,10 @@ func newAuthFixture(t *testing.T, secure bool, limit ...int) *authFixture {
 	logs := &logBuffer{}
 	logger := slog.New(slog.NewJSONHandler(logs, nil))
 	router := httpserver.NewRouter(db, logger, cfg.HealthTimeout)
-	authhandler.New(service, secure, logger).Register(router)
+	authHTTP := authhandler.New(service, secure, logger)
+	authHTTP.Register(router)
+	memberhttp.New(memberapp.New(db), authHTTP).Register(router)
+	tenanthttp.New(tenantapp.New(db), authHTTP).Register(router)
 	var server *httptest.Server
 	if secure {
 		server = httptest.NewTLSServer(router)

@@ -35,6 +35,21 @@ func (q *Queries) ActiveMembership(ctx context.Context, arg ActiveMembershipPara
 	return i, err
 }
 
+const activeUserIDByEmail = `-- name: ActiveUserIDByEmail :one
+SELECT id FROM users WHERE email=? AND CAST(email AS BINARY)=CAST(? AS BINARY) AND is_active=TRUE
+`
+
+type ActiveUserIDByEmailParams struct {
+	Email string
+}
+
+func (q *Queries) ActiveUserIDByEmail(ctx context.Context, arg ActiveUserIDByEmailParams) (string, error) {
+	row := q.db.QueryRowContext(ctx, activeUserIDByEmail, arg.Email, arg.Email)
+	var id string
+	err := row.Scan(&id)
+	return id, err
+}
+
 const cleanupLoginLimits = `-- name: CleanupLoginLimits :execrows
 DELETE FROM login_rate_limits WHERE window_start<?
 `
@@ -193,6 +208,17 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 	return i, err
 }
 
+const isPlatformAdmin = `-- name: IsPlatformAdmin :one
+SELECT is_platform_admin FROM users WHERE id=? AND is_active=TRUE
+`
+
+func (q *Queries) IsPlatformAdmin(ctx context.Context, id string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, isPlatformAdmin, id)
+	var is_platform_admin bool
+	err := row.Scan(&is_platform_admin)
+	return is_platform_admin, err
+}
+
 const listActiveTenantsForUser = `-- name: ListActiveTenantsForUser :many
 SELECT t.id,t.name,t.slug,m.role FROM tenant_memberships m
 JOIN tenants t ON t.id=m.tenant_id JOIN users u ON u.id=m.user_id
@@ -287,6 +313,24 @@ func (q *Queries) LockSession(ctx context.Context, arg LockSessionParams) (Sessi
 		&i.ExpiresAt,
 	)
 	return i, err
+}
+
+const revokeTenantSessions = `-- name: RevokeTenantSessions :exec
+DELETE FROM sessions WHERE active_tenant_id=?
+`
+
+func (q *Queries) RevokeTenantSessions(ctx context.Context, activeTenantID sql.NullString) error {
+	_, err := q.db.ExecContext(ctx, revokeTenantSessions, activeTenantID)
+	return err
+}
+
+const revokeUserSessions = `-- name: RevokeUserSessions :exec
+DELETE FROM sessions WHERE user_id=?
+`
+
+func (q *Queries) RevokeUserSessions(ctx context.Context, userID string) error {
+	_, err := q.db.ExecContext(ctx, revokeUserSessions, userID)
+	return err
 }
 
 const touchSession = `-- name: TouchSession :execrows

@@ -1,6 +1,6 @@
 # ARQUITECTURA — GoPanel Pilot
 
-**Versión:** 1.2 · **Estilo:** monolito modular server-rendered
+**Versión:** 1.3 · **Estilo:** monolito modular server-rendered
 
 Conciliación de contratos: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). Las decisiones aún no tomadas se registran en [decisiones pendientes](docs/decisiones-pendientes.md).
 
@@ -114,11 +114,13 @@ Mutación confirmada -> publicar evento interno `{type, tenant_id, resource, ver
 - `users` global; `tenant_memberships` vincula usuarios, tenants y rol.
 - Tenant activo se resuelve de sesión y se revalida contra membresía en cada petición sensible.
 - Servicios reciben un `ActorContext` (user ID, tenant ID, rol/permisos), construido solo por middleware confiable.
-- El tenant candidato del selector y los datos objetivo de gestión de miembros se validan en servidor; nunca definen el `ActorContext`. Ver ADR-0001. Las rutas de miembros y plataforma se fijarán antes de su implementación, sin inferir endpoints de esta tabla de referencia.
+- El tenant candidato del selector y los datos objetivo de gestión de miembros se validan en servidor; nunca definen el `ActorContext`. Ver ADR-0001. Las rutas de miembros y plataforma se fijan en ADR-0005; no se infieren endpoints adicionales de esta tabla de referencia.
 - Repositorios exigen tenant ID explícito y filtran siempre por él; las actualizaciones/bajas usan `WHERE tenant_id = ? AND id = ?`.
 - MySQL 8 no ofrece RLS equivalente a PostgreSQL: exigir filtros por `tenant_id` en todos los repositorios, pruebas cruzadas y autorización en servidor.
 - Evitar IDs de otro tenant en mensajes de error, eventos, auditoría visible y métricas.
-- Roles: Owner/Admin/Viewer por tenant; Platform Admin separado.
+- Roles: Owner/Admin/Viewer por tenant; Platform Admin separado. Políticas en `internal/platform/rbac/`, denegación por defecto y revalidación MySQL en servicios. Gestión de miembros/configuración y plataforma implementadas según [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md).
+- Servicios de miembros/empresas controlan transacción; repositorios aceptan el `*sql.Tx` sin confirmarlo. Se bloquea el tenant antes de autorizar mutaciones de membresía. Cambio + auditoría + revocación se confirman juntos. Los repositorios de persistencia anteriores no son una API autorizada de aplicación.
+- Las rutas protegidas comparten sesión, no-store, CSRF, límite de formulario y control de origen con autenticación. Vistas mínimas administrativas; extracción de componentes de recursos sigue después de ambos CRUD.
 - Contraseñas Argon2id, sesiones server-side, CSRF, rate limit en login, cookies seguras y headers de seguridad.
 - Autenticación y CSRF implementados según [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md): cookies opacas, rotación al cambiar empresa, comprobación de origen y tokens en todos los POST. Rate limit persistido en MySQL, sin caché; mantenimiento en el proceso Go.
 - El broker SSE en memoria no es duradero: al reconectar, el cliente debe refrescar estado desde MySQL.

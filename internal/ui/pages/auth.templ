@@ -56,9 +56,12 @@ templ LogoutForm(csrf string) {
  </form>
 }
 
-templ TenantPage(csrf string, tenants []dbgen.ListActiveTenantsForUserRow, message string) {
+templ TenantPage(csrf string, tenants []dbgen.ListActiveTenantsForUserRow, message string, platform bool) {
  @AuthLayout("Seleccionar empresa") {
   @TenantForm(csrf,tenants,message)
+  if platform {
+ <a href="/platform" class="mt-6 inline-block font-medium text-indigo-700 underline">Administración de plataforma</a>
+ }
   @LogoutForm(csrf)
  }
 }
@@ -86,12 +89,19 @@ templ TenantForm(csrf string, tenants []dbgen.ListActiveTenantsForUserRow, messa
  </section>
 }
 
-templ ActiveTenant(csrf, name, role string) {
+templ ActiveTenant(csrf, name, role string, members, settings bool) {
  @AuthLayout("Empresa activa") {
   <section class="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
    <h2 class="text-xl font-semibold">{ name }</h2>
    <p class="mt-2">Rol de tu membresía: <strong>{ role }</strong></p>
-   <p class="mt-5 text-slate-600">El contexto de empresa está verificado. Los módulos administrativos se incorporarán en las siguientes etapas.</p>
+   <nav aria-label="Módulos" class="mt-5 flex gap-4 text-indigo-700 underline">
+ if members {
+ <a href="/app/members">Miembros</a>
+ }
+ if settings {
+ <a href="/app/settings">Configuración</a>
+ }
+ </nav>
    <a href="/app/tenants/select" class="mt-5 inline-block font-medium text-indigo-700 underline focus-visible:outline-2">Cambiar empresa</a>
   </section>
   @LogoutForm(csrf)

@@ -56,3 +56,15 @@ DELETE FROM login_rate_limits WHERE window_start<?;
 
 -- name: LockIdentity :one
 SELECT id,password_hash,is_active FROM users WHERE id=? FOR UPDATE;
+
+-- name: IsPlatformAdmin :one
+SELECT is_platform_admin FROM users WHERE id=? AND is_active=TRUE;
+
+-- name: RevokeUserSessions :exec
+DELETE FROM sessions WHERE user_id=?;
+
+-- name: RevokeTenantSessions :exec
+DELETE FROM sessions WHERE active_tenant_id=?;
+
+-- name: ActiveUserIDByEmail :one
+SELECT id FROM users WHERE email=sqlc.arg(email) AND CAST(email AS BINARY)=CAST(sqlc.arg(email) AS BINARY) AND is_active=TRUE;

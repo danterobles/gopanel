@@ -16,6 +16,7 @@ import (
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 	"gopanel/internal/platform/auth"
+	"gopanel/internal/platform/rbac"
 	"gopanel/internal/platform/tenancy"
 	"gopanel/internal/ui/pages"
 )
@@ -121,7 +122,7 @@ func action(path string) string {
 	case "/logout":
 		return "auth.logout"
 	default:
-		return "tenants.activate"
+		return mutationAction(path)
 	}
 }
 func (h *Handler) deny(w http.ResponseWriter, r *http.Request, message string) {
@@ -285,7 +286,12 @@ func (h *Handler) selectResponse(w http.ResponseWriter, r *http.Request, status 
 		h.failure(w, r)
 		return
 	}
-	h.render(w, r, status, pages.TenantPage(p.CSRF(), rows, message), pages.TenantForm(p.CSRF(), rows, message))
+	platform, err := h.service.PlatformAdmin(r.Context(), p)
+	if err != nil {
+		h.failure(w, r)
+		return
+	}
+	h.render(w, r, status, pages.TenantPage(p.CSRF(), rows, message, platform), pages.TenantForm(p.CSRF(), rows, message))
 }
 func (h *Handler) activate(w http.ResponseWriter, r *http.Request) {
 	p := principal(r)
@@ -323,6 +329,6 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) app(w http.ResponseWriter, r *http.Request) {
 	actor, _ := tenancy.Actor(r.Context())
 	p := principal(r)
-	component := pages.ActiveTenant(p.CSRF(), actor.TenantName, actor.Role)
+	component := pages.ActiveTenant(p.CSRF(), actor.TenantName, actor.Role, rbac.Can(actor.Role, rbac.MembersRead), rbac.Can(actor.Role, rbac.TenantSettings))
 	h.render(w, r, 200, component, component)
 }

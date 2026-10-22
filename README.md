@@ -1,6 +1,6 @@
 # GoPanel Pilot
 
-SaaS administrativo multiempresa en construcción. Etapas 0–3: bootstrap, persistencia e identidad multiempresa. El desarrollo local usa Go, Node y MySQL nativos. RBAC por acción/recurso y CRUD HTTP siguen en las etapas siguientes.
+SaaS administrativo multiempresa en construcción. Etapas 0–4: bootstrap, persistencia, identidad, permisos y miembros multiempresa. El desarrollo local usa Go, Node y MySQL nativos. El CRUD HTTP de clientes/productos sigue en las etapas siguientes.
 
 ## Arranque nativo
 
@@ -52,6 +52,7 @@ Para carga, usar `SEED_COUNT=10000 make seed` sobre una base de desarrollo vací
 | `make test` | Unitarias y HTTP sin requerir MySQL externo |
 | `make test-integration` | MySQL real; crea/elimina únicamente bases aleatorias `gopanel_test_*`, nunca resetea la base de trabajo |
 | `make build` | Compilar `bin/gopanel` sin CGO |
+| `make smoke-rbac` | Proceso Go nativo temporal: Owner/Admin/Viewer, panel de plataforma y CSRF con seeds privados; no cambia datos de negocio |
 | `make smoke-auth` | Login con el usuario compartido del archivo seed privado, selección/cambio de empresa y logout a través de un reinicio real del proceso Go; requiere seed y migraciones aplicadas mediante `make migrate-up` |
 | `make smoke` | Ejecutar procesos Go temporales en puertos libres; verificar assets, health y SIGTERM. Simula fallo de conexión con un endpoint inalcanzable, sin detener MySQL |
 | `make migrate-up`, `make migrate-down` | Aplicar pendientes o revertir una versión con protección explícita |
@@ -68,7 +69,7 @@ sh scripts/with-env.sh go test -race -tags=integration ./...
 make smoke
 ```
 
-Se verifican up/down/up y dirty, aislamiento entre tenants en lectura/mutación/listado/auditoría, paginación/búsqueda literal, constraints, SKU concurrente y reutilización tras baja, edición sin cambios, protección concurrente del último Owner, transacciones y persistencia/revocación/caducidad de sesiones. También se verifican sesiones/CSRF HTTP y HTML/HTMX, cookies de producción bajo TLS de prueba, membresías revocadas, límites de login y errores genéricos. RBAC por acción/recurso se incorpora en etapa 4.
+Se verifican up/down/up y dirty, aislamiento entre tenants en lectura/mutación/listado/auditoría, paginación/búsqueda literal, constraints, SKU concurrente y reutilización tras baja, edición sin cambios, protección concurrente del último Owner, transacciones y persistencia/revocación/caducidad de sesiones. También se verifican sesiones/CSRF HTTP y HTML/HTMX, cookies de producción bajo TLS de prueba, membresías revocadas, límites de login y errores genéricos. La etapa 4 añade matriz RBAC tabular, gestión de miembros y configuración en HTTP, plataforma independiente, revocación al cambiar privilegios y rollback de auditoría.
 
 ## Configuración
 
@@ -104,6 +105,14 @@ El proceso limpia sesiones vencidas/ociosas y buckets de intentos de más de 24h
 
 La recuperación automática de contraseña está diferida (D-03); no existe ruta de reset ni se añadió correo. Un Platform Admin sin membresías no accede a empresas comerciales.
 
+## Miembros y administración
+
+Desde `/app`, Owner/Admin acceden a `/app/members`; solo Owner agrega cuentas existentes por correo y asigna Admin/Viewer o cambia su estado. Viewer recibe 403 incluso con HTTP manual. El Owner inicial se crea con seed o alta de empresa; la interfaz no promueve a Owner ni transfiere propiedad. No puede degradarse/desactivarse el último Owner activo, aun con solicitudes concurrentes. Los cambios efectivos revocan todas las sesiones del usuario objetivo: deberá volver a ingresar. Guardar sin cambios conserva las sesiones.
+
+Owner puede cambiar el nombre desde `/app/settings`. El slug no se modifica. La cuenta `platform@gopanel.test` tiene un acceso a `/platform` desde el selector: lista/crea empresas con Owner de cuenta activa existente, cambia nombre/estado y ve conexiones del pool MySQL. No obtiene acceso comercial por ser operador. Desactivar empresa revoca las sesiones que la tienen seleccionada; reactivarla vuelve a habilitar su selección para miembros activos.
+
+Los listados administrativos muestran 25 filas por página. Validación 422, permiso denegado 403, recurso ajeno/ausente 404 y conflicto del último Owner 409; HTMX muestra errores junto al formulario sin perder valores ni foco. Mutación, auditoría de éxito y revocación comparten transacción. No se registran correos, nombres ni tokens en auditoría. Sin cambios de esquema ni migraciones nuevas. Contrato detallado: [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md).
+
 ## Alternativa Compose
 
 Se conserva para reproducibilidad, sin usarla para validar esta etapa local. Copiar `.env.compose.example` a `.env.compose` y definir contraseñas privadas distintas; no reutilizar el `.env` nativo de root como `MYSQL_USER` del contenedor. El ejemplo usa MySQL 13306 para evitar colisionar con el servidor local.
@@ -119,6 +128,6 @@ CI está preparado para generación reproducible, formato/vet, tests, integraci�
 
 ## Seguimiento
 
-Leer [PRD](PRD.md), [arquitectura](ARQUITECTURA.md), [datos](DATA.md), [AGENTS](AGENTS.md), [plan](docs/plan-de-implementacion.md) y [aceptación](docs/matriz-de-aceptacion.md). Decisiones: [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md), [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md), [pendientes](docs/decisiones-pendientes.md). Evidencia: [etapa 1](docs/validacion-etapa-1.md) [etapa 2](docs/validacion-etapa-2.md) y [etapa 3](docs/validacion-etapa-3.md).
+Leer [PRD](PRD.md), [arquitectura](ARQUITECTURA.md), [datos](DATA.md), [AGENTS](AGENTS.md), [plan](docs/plan-de-implementacion.md) y [aceptación](docs/matriz-de-aceptacion.md). Decisiones: [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md), [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md), [ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md), [pendientes](docs/decisiones-pendientes.md). Evidencia: [etapa 1](docs/validacion-etapa-1.md) [etapa 2](docs/validacion-etapa-2.md) [etapa 3](docs/validacion-etapa-3.md) y [etapa 4](docs/validacion-etapa-4.md).
 
-Siguiente etapa: RBAC por acción/recurso y gestión de miembros. TLS/proxy y operación pública siguen en D-09.
+Siguiente etapa: CRUD de clientes, validación de campos y cierre de D-06 para clientes. TLS/proxy y operación pública siguen en D-09.

@@ -1,6 +1,6 @@
 # DATA — Modelo de datos GoPanel Pilot
 
-**Versión:** 1.3 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
+**Versión:** 1.4 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
 
 Conciliación: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). El esquema SQL de referencia se implementó en `migrations/000001_initial.up.sql` durante etapa 2; rollback separado y operación nativa según [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md).
 
@@ -185,7 +185,7 @@ WHERE tenant_id = ? AND status = 'active' AND deleted_at IS NULL;
 
 ### Política implementada en etapa 3
 
-Ver [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md): expiración absoluta 12 h, inactividad 30 min, touch condicionado cada 1 min y limpieza cada 5 min por defecto. Cambiar tenant rota token/CSRF conservando creación y expiración absoluta. Solo se persiste SHA-256 del token; cada acceso resuelve membresía/tenant/usuario activos. Las elevaciones de rol futuras deberán revocar o rotar sesiones en su servicio antes de exponer esas mutaciones.
+Ver [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md): expiración absoluta 12 h, inactividad 30 min, touch condicionado cada 1 min y limpieza cada 5 min por defecto. Cambiar tenant rota token/CSRF conservando creación y expiración absoluta. Solo se persiste SHA-256 del token; cada acceso resuelve membresía/tenant/usuario activos. Etapa 4 implementa revocación transaccional de todas las sesiones del usuario ante altas o cambios efectivos de membresía, incluida elevación de privilegios (ADR-0005). Ediciones sin cambios conservan sesiones. Desactivar empresa revoca sesiones que la tienen seleccionada.
 
 La migración aditiva `000002_login_limits` añade `login_rate_limits` con clave BINARY(32) (hash de IP remota), window_start DATETIME(6), attempts INT UNSIGNED e índice por ventana. Permite 10 intentos/minuto por IP por defecto, con admisión transaccional. No modifica 000001 ni introduce caché. La migración down 2 elimina únicamente estos contadores.
 
@@ -202,6 +202,14 @@ La migración aditiva `000002_login_limits` añade `login_rate_limits` con clave
 | tenant.settings | Sí | No | No |
 
 Platform Admin opera con permisos de plataforma separados; no obtiene acceso automático a datos comerciales.
+
+### Política implementada en etapa 4
+
+[ADR-0005](docs/adr/0005-permisos-miembros-y-plataforma.md) fija rutas y campos. La política consulta membresía/usuario/empresa activos desde MySQL y deniega acciones o roles desconocidos; un rol enviado por formulario o desactualizado en contexto no autoriza. Modificar miembros bloquea primero la empresa y comprueba permisos, objetivo acotado e invariante de Owner dentro de la misma transacción que la auditoría y revocación.
+
+Miembros: alta por correo exacto normalizado, cuenta activa existente y rol Admin/Viewer; cambios de estado y rol, sin promover a Owner. Owner existente puede conservar su rol o degradarse si queda otro Owner activo. No hay transferencia desde UI ni administración de usuarios globales. `tenant.settings` cambia solo nombre (trim, 1–180 caracteres Unicode). Slug inmutable; alta de empresa admite 3–100 caracteres ASCII minúsculos/números/guiones, extremos alfanuméricos.
+
+La administración global crea empresa + Owner existente de forma atómica, modifica nombre/estado y lista empresas de 25 en 25. Métricas técnicas limitadas al pool SQL, sin datos comerciales. Éxitos globales se auditan con tenant NULL y entidad objetivo; las denegaciones no guardan correos, formularios ni identificadores ajenos. No hay migración nueva en etapa 4.
 
 ## 7. Eventos SSE
 - Broker **en memoria del proceso Go**, separado por tenant; no almacenar eventos en MySQL como cola en esta POC.

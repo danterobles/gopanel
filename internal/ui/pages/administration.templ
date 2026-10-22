@@ -1,0 +1,134 @@
+package pages
+
+import "database/sql"
+import "strconv"
+import dbgen "gopanel/internal/db/generated"
+
+templ ProtectedPage(title string, body templ.Component) {
+ @AuthLayout(title) {
+ @body
+ }
+}
+
+templ OperationNotice(message string) {
+ <div role="alert" class="my-4 rounded-md border border-red-300 bg-red-50 p-4 text-red-900">{ message }</div>
+}
+
+templ AdminNavigation() {
+ <nav aria-label="Administración" class="my-6 flex flex-wrap gap-4 text-indigo-700 underline">
+  <a href="/app">Empresa activa</a><a href="/app/tenants/select">Cambiar empresa</a>
+ </nav>
+}
+
+templ Pagination(path string, offset, count int) {
+ <nav aria-label="Paginación" class="my-6 flex gap-6 text-indigo-700 underline">
+  if offset > 0 {
+ <a href={ templ.SafeURL(path+"?offset="+strconv.Itoa(max(0,offset-25)))
+ }>Anterior</a> }
+  if count == 25 && offset < 100000 {
+ <a href={ templ.SafeURL(path+"?offset="+strconv.Itoa(offset+25))
+ }>Siguiente</a> }
+ </nav>
+}
+
+templ Members(csrf, tenant string, manage bool, rows []dbgen.ListMemberDetailsRow, offset int) {
+ @AdminNavigation()
+ <p class="my-4 font-semibold">{ tenant }</p>
+ if manage {
+  <section class="my-6 rounded-xl border bg-white p-5">
+   <h2 class="text-xl font-semibold">Agregar miembro existente</h2>
+   <p class="my-3 text-sm">La cuenta debe existir y estar activa. Solo se asignan Admin o Viewer. No se envían invitaciones.</p>
+   <form method="post" action="/app/members" hx-post="/app/members" hx-target="find .operation-feedback" class="admin-form space-y-3">
+    <input type="hidden" name="csrf_token" value={ csrf }/>
+ <div class="operation-feedback" aria-live="polite"></div>
+    <label class="block">Correo de la cuenta<input name="email" type="email" required maxlength="254" autocomplete="off" class="mt-1 w-full rounded border p-2"/></label>
+    <label class="block">Rol<select name="role" class="mt-1 w-full rounded border p-2"><option value="admin">Admin</option><option value="viewer">Viewer</option></select></label>
+    <button class="rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-50">Agregar miembro</button><span class="htmx-indicator" role="status">Guardando…</span>
+   </form>
+  </section>
+ }
+ if len(rows)==0 {
+ <p>No hay miembros en esta página.</p>
+ }
+ for _,row := range rows {
+  <article class="my-4 rounded-xl border bg-white p-5">
+   <h2 class="font-semibold">{ row.DisplayName }</h2><p>{ row.Email }</p>
+   <p>Rol: { row.Role } ·
+ if row.IsActive {
+ Activo
+ } else {
+ Inactivo
+ }
+ </p>
+   if !row.UserActive {
+ <p class="text-red-800">Cuenta de usuario inactiva.</p>
+ }
+   if manage {
+    <form method="post" action={ templ.SafeURL("/app/members/"+row.ID) } hx-post={ "/app/members/"+row.ID } hx-target="find .operation-feedback" class="mt-3 space-y-3">
+     <input type="hidden" name="csrf_token" value={ csrf }/>
+ <div class="operation-feedback" aria-live="polite"></div>
+     <label class="block">Rol de { row.DisplayName }<select name="role" class="mt-1 w-full rounded border p-2">
+      if row.Role=="owner" {
+ <option value="owner" selected>Owner (conservar)</option>
+ }
+      <option value="admin" selected?={ row.Role=="admin" }>Admin</option><option value="viewer" selected?={ row.Role=="viewer" }>Viewer</option>
+     </select></label>
+     <label class="block">Estado de { row.DisplayName }<select name="active" class="mt-1 w-full rounded border p-2"><option value="true" selected?={ row.IsActive }>Activo</option><option value="false" selected?={ !row.IsActive }>Inactivo</option></select></label>
+     <button class="rounded border border-indigo-700 px-4 py-2 text-indigo-800 disabled:opacity-50">Guardar miembro</button><span class="htmx-indicator" role="status">Guardando…</span>
+    </form>
+   }
+  </article>
+ }
+ @Pagination("/app/members",offset,len(rows))
+ @LogoutForm(csrf)
+}
+
+templ Settings(csrf string, tenant dbgen.Tenant) {
+ @AdminNavigation()
+ <p class="my-4">Identificador: { tenant.Slug } (no editable)</p>
+ <form method="post" action="/app/settings" hx-post="/app/settings" hx-target="find .operation-feedback" class="my-6 space-y-4 rounded-xl border bg-white p-5">
+  <input type="hidden" name="csrf_token" value={ csrf }/>
+ <div class="operation-feedback" aria-live="polite"></div>
+  <label class="block">Nombre de empresa<input name="name" required maxlength="180" value={ tenant.Name } class="mt-1 w-full rounded border p-2"/></label>
+  <button class="rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-50">Guardar nombre</button><span class="htmx-indicator" role="status">Guardando…</span>
+ </form>
+ @LogoutForm(csrf)
+}
+
+templ Platform(csrf string, tenants []dbgen.Tenant, stats sql.DBStats, offset int) {
+ @AdminNavigation()
+ <section class="my-6 rounded-xl border bg-white p-5">
+  <h2 class="text-xl font-semibold">Métricas técnicas · conexiones MySQL</h2>
+  <dl class="mt-3"><dt>Abiertas</dt><dd>{ strconv.Itoa(stats.OpenConnections) }</dd><dt>En uso</dt><dd>{ strconv.Itoa(stats.InUse) }</dd><dt>Ociosas</dt><dd>{ strconv.Itoa(stats.Idle) }</dd></dl>
+ </section>
+ <section class="my-6 rounded-xl border bg-white p-5">
+  <h2 class="text-xl font-semibold">Crear empresa</h2>
+  <p class="my-3 text-sm">El Owner debe tener una cuenta activa. Se cerrarán sus sesiones para renovar privilegios.</p>
+  <form method="post" action="/platform/tenants" hx-post="/platform/tenants" hx-target="find .operation-feedback" class="space-y-3">
+   <input type="hidden" name="csrf_token" value={ csrf }/>
+ <div class="operation-feedback" aria-live="polite"></div>
+   <label class="block">Nombre<input name="name" required maxlength="180" class="mt-1 w-full rounded border p-2"/></label>
+   <label class="block">Slug<input name="slug" required minlength="3" maxlength="100" pattern="[a-z0-9][a-z0-9-]{1,98}[a-z0-9]" class="mt-1 w-full rounded border p-2"/></label>
+   <label class="block">Correo del Owner<input name="owner_email" type="email" required maxlength="254" class="mt-1 w-full rounded border p-2"/></label>
+   <button class="rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-50">Crear empresa</button><span class="htmx-indicator" role="status">Guardando…</span>
+  </form>
+ </section>
+ if len(tenants)==0 {
+ <p>No hay empresas en esta página.</p>
+ }
+ for _,tenant := range tenants {
+  <section class="my-4 rounded-xl border bg-white p-5">
+   <h2 class="font-semibold">{ tenant.Name } · { tenant.Slug }</h2>
+   <form method="post" action={ templ.SafeURL("/platform/tenants/"+tenant.ID) } hx-post={ "/platform/tenants/"+tenant.ID } hx-target="find .operation-feedback" class="mt-3 space-y-3">
+    <input type="hidden" name="csrf_token" value={ csrf }/>
+ <div class="operation-feedback" aria-live="polite"></div>
+    <label class="block">Nombre de { tenant.Slug }<input name="name" value={ tenant.Name } required maxlength="180" class="mt-1 w-full rounded border p-2"/></label>
+    <label class="block">Estado de { tenant.Slug }<select name="active" class="mt-1 w-full rounded border p-2"><option value="true" selected?={ tenant.IsActive }>Activa</option><option value="false" selected?={ !tenant.IsActive }>Inactiva</option></select></label>
+    <p class="text-sm">Desactivar cierra las sesiones que tienen esta empresa activa.</p>
+    <button class="rounded border border-indigo-700 px-4 py-2 text-indigo-800 disabled:opacity-50">Guardar empresa</button><span class="htmx-indicator" role="status">Guardando…</span>
+   </form>
+  </section>
+ }
+ @Pagination("/platform",offset,len(tenants))
+ @LogoutForm(csrf)
+}

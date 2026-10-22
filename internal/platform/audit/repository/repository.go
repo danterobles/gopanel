@@ -42,3 +42,11 @@ func (r *Repository) List(ctx context.Context, tenantID string, limit, offset in
 	}
 	return rows, nil
 }
+
+// AppendGlobal is reserved for platform operations, which have no commercial scope.
+func (r *Repository) AppendGlobal(ctx context.Context, e Entry) error {
+	if len(e.Metadata) > 0 && !json.Valid(e.Metadata) {
+		return fmt.Errorf("invalid audit metadata")
+	}
+	return r.q.CreateAudit(ctx, dbgen.CreateAuditParams{ID: id.New(), ActorUserID: optional(e.ActorID), Action: e.Action, EntityType: e.EntityType, EntityID: optional(e.EntityID), Outcome: e.Outcome, RequestID: optional(e.RequestID), Metadata: e.Metadata})
+}
