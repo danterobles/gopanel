@@ -39,10 +39,11 @@ type subscriber struct {
 	stopped bool
 }
 type Broker struct {
-	mu      sync.Mutex
-	tenants map[string]map[*subscriber]struct{}
-	count   int
-	closed  bool
+	mu                        sync.Mutex
+	tenants                   map[string]map[*subscriber]struct{}
+	count                     int
+	closed                    bool
+	rejected, slow, published uint64
 }
 
 func New() *Broker { return &Broker{tenants: make(map[string]map[*subscriber]struct{})} }
@@ -53,6 +54,7 @@ func (b *Broker) Subscribe(tenant, user string) (*Subscription, error) {
 		return nil, ErrClosed
 	}
 	if tenant == "" || user == "" {
+		b.rejected++
 		return nil, ErrCapacity
 	}
 	userCount := 0
@@ -64,6 +66,7 @@ func (b *Broker) Subscribe(tenant, user string) (*Subscription, error) {
 		}
 	}
 	if b.count >= MaxConnections || len(b.tenants[tenant]) >= MaxTenantConnections || userCount >= MaxUserConnections {
+		b.rejected++
 		return nil, ErrCapacity
 	}
 	s := &subscriber{user: user, events: make(chan Event, BufferSize), done: make(chan struct{})}
@@ -97,6 +100,7 @@ func (b *Broker) Publish(tenant, resource string) {
 	if b.closed {
 		return
 	}
+	b.published++
 	event := Event{Type: "invalidate", Resource: resource, Version: id.New()}
 	for s := range b.tenants[tenant] {
 		if s.stopped {
@@ -106,6 +110,7 @@ func (b *Broker) Publish(tenant, resource string) {
 		case s.events <- event:
 		default:
 			s.stopped = true
+			b.slow++
 			close(s.done) // Hold admission until the handler releases the connection.
 		}
 	}
@@ -119,4 +124,18 @@ func (b *Broker) Close() {
 			b.remove(tenant, s)
 		}
 	}
+}
+
+type Stats struct {
+	Active          int    `json:"active"`
+	Capacity        int    `json:"capacity"`
+	Published       uint64 `json:"published"`
+	Rejected        uint64 `json:"rejected"`
+	SlowDisconnects uint64 `json:"slow_disconnects"`
+}
+
+func (b *Broker) Stats() Stats {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return Stats{b.count, MaxConnections, b.published, b.rejected, b.slow}
 }

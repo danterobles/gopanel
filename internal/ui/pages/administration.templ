@@ -96,6 +96,7 @@ templ Settings(csrf string, tenant dbgen.Tenant) {
 }
 
 templ Platform(csrf string, tenants []dbgen.Tenant, stats sql.DBStats, offset int) {
+<a href="/platform/metrics" class="text-indigo-700 underline">Métricas operativas (JSON)</a>
  @AdminNavigation()
  <section class="my-6 rounded-xl border bg-white p-5">
   <h2 class="text-xl font-semibold">Métricas técnicas · conexiones MySQL</h2>

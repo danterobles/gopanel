@@ -40,6 +40,8 @@ import (
 	eventshttp "gopanel/internal/platform/events/handler"
 	httpserver "gopanel/internal/platform/http"
 	"gopanel/internal/platform/id"
+	"gopanel/internal/platform/observability"
+	metricshandler "gopanel/internal/platform/observability/handler"
 )
 
 const fixturePassword = "http-test-fixture-only-password"
@@ -99,11 +101,13 @@ func newAuthFixture(t *testing.T, secure bool, limit ...int) *authFixture {
 	service := auth.New(db, cfg, nil)
 	logs := &logBuffer{}
 	logger := slog.New(slog.NewJSONHandler(logs, nil))
-	router := httpserver.NewRouter(db, logger, cfg.HealthTimeout)
+	recorder := observability.New()
+	router := httpserver.NewRouter(db, logger, cfg.HealthTimeout, recorder)
 	authHTTP := authhandler.New(service, secure, logger)
 	authHTTP.Register(router)
 	broker := events.New()
 	t.Cleanup(broker.Close)
+	metricshandler.New(db, recorder, broker, authHTTP).Register(router)
 	dashboardhttp.New(dashboard.New(db, nil), authHTTP).Register(router)
 	eventshttp.New(broker, authHTTP, t.Context()).Register(router)
 	producthttp.New(productapp.New(db, broker), authHTTP).Register(router)

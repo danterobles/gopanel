@@ -568,198 +568,202 @@ func Platform(csrf string, tenants []dbgen.Tenant, stats sql.DBStats, offset int
 			templ_7745c5c3_Var24 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<a href=\"/platform/metrics\" class=\"text-indigo-700 underline\">Métricas operativas (JSON)</a>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		templ_7745c5c3_Err = AdminNavigation().Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<section class=\"my-6 rounded-xl border bg-white p-5\"><h2 class=\"text-xl font-semibold\">Métricas técnicas · conexiones MySQL</h2><dl class=\"mt-3\"><dt>Abiertas</dt><dd>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<section class=\"my-6 rounded-xl border bg-white p-5\"><h2 class=\"text-xl font-semibold\">Métricas técnicas · conexiones MySQL</h2><dl class=\"mt-3\"><dt>Abiertas</dt><dd>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(stats.OpenConnections))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 102, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 103, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</dd><dt>En uso</dt><dd>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</dd><dt>En uso</dt><dd>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(stats.InUse))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 102, Col: 130}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 103, Col: 130}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</dd><dt>Ociosas</dt><dd>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</dd><dt>Ociosas</dt><dd>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(stats.Idle))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 102, Col: 183}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 103, Col: 183}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</dd></dl></section><section class=\"my-6 rounded-xl border bg-white p-5\"><h2 class=\"text-xl font-semibold\">Crear empresa</h2><p class=\"my-3 text-sm\">El Owner debe tener una cuenta activa. Se cerrarán sus sesiones para renovar privilegios.</p><form method=\"post\" action=\"/platform/tenants\" hx-post=\"/platform/tenants\" hx-target=\"find .operation-feedback\" class=\"space-y-3\"><input type=\"hidden\" name=\"csrf_token\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</dd></dl></section><section class=\"my-6 rounded-xl border bg-white p-5\"><h2 class=\"text-xl font-semibold\">Crear empresa</h2><p class=\"my-3 text-sm\">El Owner debe tener una cuenta activa. Se cerrarán sus sesiones para renovar privilegios.</p><form method=\"post\" action=\"/platform/tenants\" hx-post=\"/platform/tenants\" hx-target=\"find .operation-feedback\" class=\"space-y-3\"><input type=\"hidden\" name=\"csrf_token\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(csrf)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 108, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 109, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "\"><div class=\"operation-feedback\" aria-live=\"polite\"></div><label class=\"block\">Nombre<input name=\"name\" required maxlength=\"180\" class=\"mt-1 w-full rounded border p-2\"></label> <label class=\"block\">Slug<input name=\"slug\" required minlength=\"3\" maxlength=\"100\" pattern=\"[a-z0-9][a-z0-9-]{1,98}[a-z0-9]\" class=\"mt-1 w-full rounded border p-2\"></label> <label class=\"block\">Correo del Owner<input name=\"owner_email\" type=\"email\" required maxlength=\"254\" class=\"mt-1 w-full rounded border p-2\"></label> <button class=\"rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-50\">Crear empresa</button><span class=\"htmx-indicator\" role=\"status\">Guardando…</span></form></section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "\"><div class=\"operation-feedback\" aria-live=\"polite\"></div><label class=\"block\">Nombre<input name=\"name\" required maxlength=\"180\" class=\"mt-1 w-full rounded border p-2\"></label> <label class=\"block\">Slug<input name=\"slug\" required minlength=\"3\" maxlength=\"100\" pattern=\"[a-z0-9][a-z0-9-]{1,98}[a-z0-9]\" class=\"mt-1 w-full rounded border p-2\"></label> <label class=\"block\">Correo del Owner<input name=\"owner_email\" type=\"email\" required maxlength=\"254\" class=\"mt-1 w-full rounded border p-2\"></label> <button class=\"rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-50\">Crear empresa</button><span class=\"htmx-indicator\" role=\"status\">Guardando…</span></form></section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(tenants) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<p>No hay empresas en esta página.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<p>No hay empresas en esta página.</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		for _, tenant := range tenants {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<section class=\"my-4 rounded-xl border bg-white p-5\"><h2 class=\"font-semibold\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<section class=\"my-4 rounded-xl border bg-white p-5\"><h2 class=\"font-semibold\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var29 string
 			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(tenant.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 121, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 122, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, " · ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, " · ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(tenant.Slug)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 121, Col: 61}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 122, Col: 61}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</h2><form method=\"post\" action=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</h2><form method=\"post\" action=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var31 templ.SafeURL
 			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/platform/tenants/" + tenant.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 122, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 123, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "\" hx-post=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\" hx-post=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var32 string
 			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.ResolveAttributeValue("/platform/tenants/" + tenant.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 122, Col: 120}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 123, Col: 120}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var32)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\" hx-target=\"find .operation-feedback\" class=\"mt-3 space-y-3\"><input type=\"hidden\" name=\"csrf_token\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "\" hx-target=\"find .operation-feedback\" class=\"mt-3 space-y-3\"><input type=\"hidden\" name=\"csrf_token\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var33 string
 			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(csrf)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 123, Col: 55}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 124, Col: 55}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "\"><div class=\"operation-feedback\" aria-live=\"polite\"></div><label class=\"block\">Nombre de ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "\"><div class=\"operation-feedback\" aria-live=\"polite\"></div><label class=\"block\">Nombre de ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var34 string
 			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(tenant.Slug)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 125, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 126, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<input name=\"name\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<input name=\"name\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.ResolveAttributeValue(tenant.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 125, Col: 88}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 126, Col: 88}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var35)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\" required maxlength=\"180\" class=\"mt-1 w-full rounded border p-2\"></label> <label class=\"block\">Estado de ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\" required maxlength=\"180\" class=\"mt-1 w-full rounded border p-2\"></label> <label class=\"block\">Estado de ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(tenant.Slug)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 126, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/administration.templ`, Line: 127, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<select name=\"active\" class=\"mt-1 w-full rounded border p-2\"><option value=\"true\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<select name=\"active\" class=\"mt-1 w-full rounded border p-2\"><option value=\"true\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if tenant.IsActive {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, " selected")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, " selected")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, ">Activa</option><option value=\"false\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, ">Activa</option><option value=\"false\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if !tenant.IsActive {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, " selected")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, " selected")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, ">Inactiva</option></select></label><p class=\"text-sm\">Desactivar cierra las sesiones que tienen esta empresa activa.</p><button class=\"rounded border border-indigo-700 px-4 py-2 text-indigo-800 disabled:opacity-50\">Guardar empresa</button><span class=\"htmx-indicator\" role=\"status\">Guardando…</span></form></section>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, ">Inactiva</option></select></label><p class=\"text-sm\">Desactivar cierra las sesiones que tienen esta empresa activa.</p><button class=\"rounded border border-indigo-700 px-4 py-2 text-indigo-800 disabled:opacity-50\">Guardar empresa</button><span class=\"htmx-indicator\" role=\"status\">Guardando…</span></form></section>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

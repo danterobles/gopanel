@@ -27,6 +27,8 @@ import (
 	"gopanel/internal/platform/events"
 	eventshandler "gopanel/internal/platform/events/handler"
 	httpserver "gopanel/internal/platform/http"
+	"gopanel/internal/platform/observability"
+	metricshandler "gopanel/internal/platform/observability/handler"
 )
 
 func main() {
@@ -60,11 +62,13 @@ func run(logger *slog.Logger) int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	service := auth.New(db, cfg, nil)
-	router := httpserver.NewRouter(db, logger, cfg.HealthTimeout)
+	recorder := observability.New()
+	router := httpserver.NewRouter(db, logger, cfg.HealthTimeout, recorder)
 	authHTTP := authhandler.New(service, cfg.Env == "production", logger)
 	authHTTP.Register(router)
 	broker := events.New()
 	defer broker.Close()
+	metricshandler.New(db, recorder, broker, authHTTP).Register(router)
 	dashboardhandler.New(dashboard.New(db, nil), authHTTP).Register(router)
 	eventshandler.New(broker, authHTTP, ctx).Register(router)
 	customershandler.New(customers.New(db, broker), authHTTP).Register(router)

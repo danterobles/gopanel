@@ -11,6 +11,7 @@ import (
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"gopanel/internal/platform/observability"
 	"gopanel/internal/ui/pages"
 	"gopanel/web"
 )
@@ -19,9 +20,13 @@ type Pinger interface{ PingContext(context.Context) error }
 
 type requestIDKey struct{}
 
-func NewRouter(db Pinger, logger *slog.Logger, healthTimeout time.Duration) *chi.Mux {
+func NewRouter(db Pinger, logger *slog.Logger, healthTimeout time.Duration, recorders ...*observability.Recorder) *chi.Mux {
+	recorder := observability.New()
+	if len(recorders) > 0 {
+		recorder = recorders[0]
+	}
 	r := chi.NewRouter()
-	r.Use(observe(logger))
+	r.Use(observe(logger, recorder))
 	r.Use(recoverPanic(logger))
 	r.Get("/health/live", func(w http.ResponseWriter, r *http.Request) { health(w, http.StatusOK, "ok") })
 	r.Get("/health/ready", func(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +54,7 @@ func health(w http.ResponseWriter, status int, state string) {
 	_, _ = w.Write([]byte("{\"status\":\"" + state + "\"}\n"))
 }
 
-func observe(logger *slog.Logger) func(http.Handler) http.Handler {
+func observe(logger *slog.Logger, recorder *observability.Recorder) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			id := rand.Text()
@@ -59,6 +64,7 @@ func observe(logger *slog.Logger) func(http.Handler) http.Handler {
 			ctx := context.WithValue(r.Context(), requestIDKey{}, id)
 			wrapped := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 			start := time.Now()
+			recorder.Start()
 			next.ServeHTTP(wrapped, r.WithContext(ctx))
 			route := chi.RouteContext(ctx).RoutePattern()
 			if route == "" {
@@ -68,6 +74,7 @@ func observe(logger *slog.Logger) func(http.Handler) http.Handler {
 			if status == 0 {
 				status = http.StatusOK
 			}
+			recorder.Finish(r.Method, route, status, time.Since(start))
 			logger.InfoContext(ctx, "http_request", "request_id", id, "method", r.Method, "route", route, "status", status, "duration_ms", float64(time.Since(start).Microseconds())/1000)
 		})
 	}
