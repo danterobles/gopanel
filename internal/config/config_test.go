@@ -61,3 +61,24 @@ func TestCustomTimeouts(t *testing.T) {
 		t.Fatal("timeouts not applied")
 	}
 }
+
+func TestAuthenticationPolicyBounds(t *testing.T) {
+	for _, env := range []map[string]string{
+		{"SESSION_ABSOLUTE_TTL": "1s"}, {"SESSION_IDLE_TTL": "0s"}, {"SESSION_IDLE_TTL": "24h"},
+		{"SESSION_TOUCH_INTERVAL": "30m"}, {"SESSION_TOUCH_INTERVAL": "0s"}, {"SESSION_ABSOLUTE_TTL": "200h"},
+		{"AUTH_CLEANUP_INTERVAL": "2h"}, {"LOGIN_ATTEMPTS_PER_MINUTE": "0"}, {"LOGIN_ATTEMPTS_PER_MINUTE": "101"},
+	} {
+		env["DB_PASSWORD"] = "fixture-only"
+		if _, err := Load(func(k string) string { return env[k] }); err == nil {
+			t.Fatal("invalid authentication policy accepted")
+		}
+	}
+	env := map[string]string{"DB_PASSWORD": "fixture-only", "SESSION_ABSOLUTE_TTL": "8h", "SESSION_IDLE_TTL": "15m", "SESSION_TOUCH_INTERVAL": "30s", "AUTH_CLEANUP_INTERVAL": "1m", "LOGIN_ATTEMPTS_PER_MINUTE": "20"}
+	cfg, err := Load(func(k string) string { return env[k] })
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.SessionAbsoluteTTL != 8*time.Hour || cfg.SessionIdleTTL != 15*time.Minute || cfg.SessionTouchInterval != 30*time.Second || cfg.LoginAttemptsPerMinute != 20 {
+		t.Fatal("authentication policy not loaded")
+	}
+}

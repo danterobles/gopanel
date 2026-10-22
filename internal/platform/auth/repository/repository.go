@@ -21,7 +21,7 @@ func (r *Repository) UserByEmail(ctx context.Context, email string) (dbgen.User,
 	return user, nil
 }
 func (r *Repository) CreateSession(ctx context.Context, hash [32]byte, userID string, tenant sql.NullString, expires time.Time) error {
-	err := r.q.CreateSession(ctx, dbgen.CreateSessionParams{TokenHash: hash[:], UserID: userID, ActiveTenantID: tenant, ExpiresAt: expires.UTC()})
+	err := r.q.CreateSession(ctx, dbgen.CreateSessionParams{TokenHash: hash[:], UserID: userID, ActiveTenantID: tenant, CreatedAt: time.Now().UTC(), LastSeenAt: time.Now().UTC(), ExpiresAt: expires.UTC()})
 	if err != nil {
 		return fmt.Errorf("persist session: %w", err)
 	}

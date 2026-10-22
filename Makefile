@@ -2,7 +2,7 @@ include tools/versions.mk
 export GOTOOLCHAIN := go1.26.10
 GO ?= go
 
-.PHONY: dev generate assets test test-integration lint fmt build migrate-up migrate-down seed smoke dev-compose generate-sql compose-migrate-up
+.PHONY: dev generate assets test test-integration lint fmt build migrate-up migrate-down seed smoke dev-compose generate-sql compose-migrate-up smoke-auth
 
 dev: build
 	sh scripts/with-env.sh ./bin/gopanel
@@ -51,3 +51,6 @@ seed:
 # Native smoke never stops the local MySQL server.
 smoke:
 	sh scripts/with-env.sh python3 scripts/smoke-native.py
+
+smoke-auth: build
+	sh scripts/with-env.sh python3 scripts/smoke-auth-native.py

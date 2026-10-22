@@ -11,14 +11,69 @@ import (
 	"time"
 )
 
+const activeMembership = `-- name: ActiveMembership :one
+SELECT t.id AS tenant_id,t.name AS tenant_name,m.role
+FROM tenant_memberships m JOIN tenants t ON t.id=m.tenant_id JOIN users u ON u.id=m.user_id
+WHERE m.tenant_id=? AND m.user_id=? AND m.is_active=TRUE AND t.is_active=TRUE AND u.is_active=TRUE
+`
+
+type ActiveMembershipParams struct {
+	TenantID string
+	UserID   string
+}
+
+type ActiveMembershipRow struct {
+	TenantID   string
+	TenantName string
+	Role       string
+}
+
+func (q *Queries) ActiveMembership(ctx context.Context, arg ActiveMembershipParams) (ActiveMembershipRow, error) {
+	row := q.db.QueryRowContext(ctx, activeMembership, arg.TenantID, arg.UserID)
+	var i ActiveMembershipRow
+	err := row.Scan(&i.TenantID, &i.TenantName, &i.Role)
+	return i, err
+}
+
+const cleanupLoginLimits = `-- name: CleanupLoginLimits :execrows
+DELETE FROM login_rate_limits WHERE window_start<?
+`
+
+func (q *Queries) CleanupLoginLimits(ctx context.Context, windowStart time.Time) (int64, error) {
+	result, err := q.db.ExecContext(ctx, cleanupLoginLimits, windowStart)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const cleanupSessions = `-- name: CleanupSessions :execrows
+DELETE FROM sessions WHERE expires_at<=? OR last_seen_at<=?
+`
+
+type CleanupSessionsParams struct {
+	Now        time.Time
+	IdleCutoff time.Time
+}
+
+func (q *Queries) CleanupSessions(ctx context.Context, arg CleanupSessionsParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, cleanupSessions, arg.Now, arg.IdleCutoff)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const createSession = `-- name: CreateSession :exec
-INSERT INTO sessions (token_hash,user_id,active_tenant_id,expires_at) VALUES (?,?,?,?)
+INSERT INTO sessions (token_hash,user_id,active_tenant_id,created_at,last_seen_at,expires_at) VALUES (?,?,?,?,?,?)
 `
 
 type CreateSessionParams struct {
 	TokenHash      []byte
 	UserID         string
 	ActiveTenantID sql.NullString
+	CreatedAt      time.Time
+	LastSeenAt     time.Time
 	ExpiresAt      time.Time
 }
 
@@ -27,6 +82,8 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 		arg.TokenHash,
 		arg.UserID,
 		arg.ActiveTenantID,
+		arg.CreatedAt,
+		arg.LastSeenAt,
 		arg.ExpiresAt,
 	)
 	return err
@@ -61,6 +118,33 @@ DELETE FROM sessions WHERE token_hash=?
 
 func (q *Queries) DeleteSession(ctx context.Context, tokenHash []byte) error {
 	_, err := q.db.ExecContext(ctx, deleteSession, tokenHash)
+	return err
+}
+
+const deleteSessionRows = `-- name: DeleteSessionRows :execrows
+DELETE FROM sessions WHERE token_hash=?
+`
+
+func (q *Queries) DeleteSessionRows(ctx context.Context, tokenHash []byte) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteSessionRows, tokenHash)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const ensureLoginLimit = `-- name: EnsureLoginLimit :exec
+INSERT INTO login_rate_limits (key_hash,window_start,attempts) VALUES (?,?,0)
+ON DUPLICATE KEY UPDATE key_hash=key_hash
+`
+
+type EnsureLoginLimitParams struct {
+	KeyHash     []byte
+	WindowStart time.Time
+}
+
+func (q *Queries) EnsureLoginLimit(ctx context.Context, arg EnsureLoginLimitParams) error {
+	_, err := q.db.ExecContext(ctx, ensureLoginLimit, arg.KeyHash, arg.WindowStart)
 	return err
 }
 
@@ -149,4 +233,97 @@ func (q *Queries) ListActiveTenantsForUser(ctx context.Context, userID string) (
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockIdentity = `-- name: LockIdentity :one
+SELECT id,password_hash,is_active FROM users WHERE id=? FOR UPDATE
+`
+
+type LockIdentityRow struct {
+	ID           string
+	PasswordHash string
+	IsActive     bool
+}
+
+func (q *Queries) LockIdentity(ctx context.Context, id string) (LockIdentityRow, error) {
+	row := q.db.QueryRowContext(ctx, lockIdentity, id)
+	var i LockIdentityRow
+	err := row.Scan(&i.ID, &i.PasswordHash, &i.IsActive)
+	return i, err
+}
+
+const lockLoginLimit = `-- name: LockLoginLimit :one
+SELECT key_hash,window_start,attempts FROM login_rate_limits WHERE key_hash=? FOR UPDATE
+`
+
+func (q *Queries) LockLoginLimit(ctx context.Context, keyHash []byte) (LoginRateLimit, error) {
+	row := q.db.QueryRowContext(ctx, lockLoginLimit, keyHash)
+	var i LoginRateLimit
+	err := row.Scan(&i.KeyHash, &i.WindowStart, &i.Attempts)
+	return i, err
+}
+
+const lockSession = `-- name: LockSession :one
+SELECT s.token_hash,s.user_id,s.active_tenant_id,s.created_at,s.last_seen_at,s.expires_at
+FROM sessions s JOIN users u ON u.id=s.user_id
+WHERE s.token_hash=? AND s.expires_at>? AND s.last_seen_at>? AND u.is_active=TRUE FOR UPDATE
+`
+
+type LockSessionParams struct {
+	TokenHash  []byte
+	Now        time.Time
+	IdleCutoff time.Time
+}
+
+func (q *Queries) LockSession(ctx context.Context, arg LockSessionParams) (Session, error) {
+	row := q.db.QueryRowContext(ctx, lockSession, arg.TokenHash, arg.Now, arg.IdleCutoff)
+	var i Session
+	err := row.Scan(
+		&i.TokenHash,
+		&i.UserID,
+		&i.ActiveTenantID,
+		&i.CreatedAt,
+		&i.LastSeenAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const touchSession = `-- name: TouchSession :execrows
+UPDATE sessions SET last_seen_at=?
+WHERE token_hash=? AND last_seen_at<=? AND expires_at>?
+`
+
+type TouchSessionParams struct {
+	Now         time.Time
+	TokenHash   []byte
+	TouchCutoff time.Time
+}
+
+func (q *Queries) TouchSession(ctx context.Context, arg TouchSessionParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, touchSession,
+		arg.Now,
+		arg.TokenHash,
+		arg.TouchCutoff,
+		arg.Now,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const updateLoginLimit = `-- name: UpdateLoginLimit :exec
+UPDATE login_rate_limits SET window_start=?,attempts=? WHERE key_hash=?
+`
+
+type UpdateLoginLimitParams struct {
+	WindowStart time.Time
+	Attempts    uint32
+	KeyHash     []byte
+}
+
+func (q *Queries) UpdateLoginLimit(ctx context.Context, arg UpdateLoginLimitParams) error {
+	_, err := q.db.ExecContext(ctx, updateLoginLimit, arg.WindowStart, arg.Attempts, arg.KeyHash)
+	return err
 }

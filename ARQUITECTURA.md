@@ -1,6 +1,6 @@
 # ARQUITECTURA — GoPanel Pilot
 
-**Versión:** 1.1 · **Estilo:** monolito modular server-rendered
+**Versión:** 1.2 · **Estilo:** monolito modular server-rendered
 
 Conciliación de contratos: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). Las decisiones aún no tomadas se registran en [decisiones pendientes](docs/decisiones-pendientes.md).
 
@@ -120,6 +120,7 @@ Mutación confirmada -> publicar evento interno `{type, tenant_id, resource, ver
 - Evitar IDs de otro tenant en mensajes de error, eventos, auditoría visible y métricas.
 - Roles: Owner/Admin/Viewer por tenant; Platform Admin separado.
 - Contraseñas Argon2id, sesiones server-side, CSRF, rate limit en login, cookies seguras y headers de seguridad.
+- Autenticación y CSRF implementados según [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md): cookies opacas, rotación al cambiar empresa, comprobación de origen y tokens en todos los POST. Rate limit persistido en MySQL, sin caché; mantenimiento en el proceso Go.
 - El broker SSE en memoria no es duradero: al reconectar, el cliente debe refrescar estado desde MySQL.
 
 ## 8. Componentes reutilizables

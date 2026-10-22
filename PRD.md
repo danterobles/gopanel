@@ -1,6 +1,6 @@
 # PRD — GoPanel Pilot
 
-**Versión:** 1.2 · **Estado:** Especificación conciliada, etapa 0 · **Producto:** SaaS administrativo multiempresa de referencia
+**Versión:** 1.3 · **Estado:** Identidad implementada, etapa 3 · **Producto:** SaaS administrativo multiempresa de referencia
 
 Contratos conciliados en [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). Seguimiento: [plan por etapas](docs/plan-de-implementacion.md), [matriz de aceptación](docs/matriz-de-aceptacion.md) y [decisiones pendientes](docs/decisiones-pendientes.md).
 
@@ -53,7 +53,7 @@ Un usuario puede pertenecer a varias empresas con distintos roles.
 - Health checks, logs estructurados, métricas básicas y auditoría de mutaciones.
 
 ## 5. Fuera de alcance
-Pagos, facturación, inventario avanzado, pedidos, API pública, apps móviles, importaciones masivas, reportes PDF, plugins, personalización visual por tenant, MFA, SSO, permisos de campo y editor drag-and-drop.
+Pagos, facturación, inventario avanzado, pedidos, API pública, apps móviles, importaciones masivas, reportes PDF, plugins, personalización visual por tenant, MFA, SSO, permisos de campo, editor drag-and-drop y recuperación automática de contraseña (diferida mediante ADR-0004).
 
 ## 6. Historias de usuario y aceptación
 | ID | Historia | Criterio verificable |
@@ -107,7 +107,7 @@ Comparar con una implementación Laravel + Filament del mismo alcance, misma bas
 - **Comparación injusta:** mismas historias, datos, hardware y metodología.
 
 ## 12. Preguntas abiertas
-La persistencia de sesiones en MySQL ya está decidida. Permanecen por precisar los tiempos de expiración absoluta e inactividad, recuperación de contraseña, operaciones de Platform Admin, gestión de Owner, normalización de SKU y despliegue de producción. Herramientas y otros contratos operativos se concretan en [decisiones pendientes](docs/decisiones-pendientes.md), mediante ADR antes de la etapa correspondiente. La existencia de una pregunta abierta no incorpora una funcionalidad adicional al MVP.
+Persistencia, política de sesiones y Argon2id están decididas en [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md): máximo 12 h, inactividad 30 min y touch cada 1 min por defecto; recuperación automática diferida. Permanecen por precisar las operaciones de Platform Admin, gestión de Owner, normalización de SKU y despliegue de producción. Herramientas y otros contratos operativos se concretan en [decisiones pendientes](docs/decisiones-pendientes.md), mediante ADR antes de la etapa correspondiente. La existencia de una pregunta abierta no incorpora una funcionalidad adicional al MVP.
 
 ## 13. Decisiones de alcance de la POC (ratificadas desde v1.1)
 - No utilizar Redis, Memcached ni caché de aplicación.

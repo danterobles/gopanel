@@ -1,6 +1,6 @@
 # DATA — Modelo de datos GoPanel Pilot
 
-**Versión:** 1.2 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
+**Versión:** 1.3 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
 
 Conciliación: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). El esquema SQL de referencia se implementó en `migrations/000001_initial.up.sql` durante etapa 2; rollback separado y operación nativa según [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md).
 
@@ -182,6 +182,12 @@ WHERE tenant_id = ? AND status = 'active' AND deleted_at IS NULL;
 - Revocar eliminando la fila; rotar token al iniciar sesión o elevar privilegios.
 - Revalidar membresía y tenant activo en operaciones sensibles: `active_tenant_id` de la sesión no es autorización suficiente.
 - Limpiar sesiones vencidas con job periódico del proceso o tarea SQL programada; no requiere Redis.
+
+### Política implementada en etapa 3
+
+Ver [ADR-0004](docs/adr/0004-autenticacion-sesiones-y-csrf.md): expiración absoluta 12 h, inactividad 30 min, touch condicionado cada 1 min y limpieza cada 5 min por defecto. Cambiar tenant rota token/CSRF conservando creación y expiración absoluta. Solo se persiste SHA-256 del token; cada acceso resuelve membresía/tenant/usuario activos. Las elevaciones de rol futuras deberán revocar o rotar sesiones en su servicio antes de exponer esas mutaciones.
+
+La migración aditiva `000002_login_limits` añade `login_rate_limits` con clave BINARY(32) (hash de IP remota), window_start DATETIME(6), attempts INT UNSIGNED e índice por ventana. Permite 10 intentos/minuto por IP por defecto, con admisión transaccional. No modifica 000001 ni introduce caché. La migración down 2 elimina únicamente estos contadores.
 
 ## 6. Matriz de permisos
 | Acción | Owner | Admin | Viewer |

@@ -10,12 +10,13 @@ Ver [ADR-0001](adr/0001-conciliacion-de-contratos-poc.md): sesiones en MySQL, SS
 
 - D-01: selección y fijación cerradas en [ADR-0002](adr/0002-herramientas-y-bootstrap.md). Generación SQL y ejecución de migraciones verificadas contra MySQL local en etapa 2; limitaciones del generador documentadas en ADR-0003.
 
+- D-02: cerrada mediante [ADR-0004](adr/0004-autenticacion-sesiones-y-csrf.md); parámetros, variables y medición local en validación de etapa 3.
+- D-03: recuperación automática diferida explícitamente mediante ADR-0004; no se añade proveedor de correo ni flujo de reset.
+
 ## Pendientes y etapas límite
 
 | ID | Decisión por cerrar | Límite | Evidencia necesaria para cerrar |
 |---|---|---|---|
-| D-02 | Expiración absoluta e inactividad, frecuencia de actualización de `last_seen_at`, limpieza y parámetros Argon2id | Antes de implementar autenticación, etapa 3 | ADR con valores y variables de configuración, validaciones y pruebas de límites temporales; parámetros Argon2id justificados y medidos en el entorno objetivo. No se cambia la decisión de persistir sesiones en MySQL. |
-| D-03 | Recuperación de contraseña: incluir un flujo concreto o diferirlo explícitamente | Antes de cerrar identidad, etapa 3 | Decisión de producto documentada; no asumir correo, proveedor externo ni tokens de recuperación. Login/logout no implican automáticamente recuperación. |
 | D-04 | Operaciones de Platform Admin y alcance de `tenant.settings` | Antes del módulo de administración, etapa 4 | Enumerar operaciones, campos, rutas, permisos y auditoría. El PRD exige administrar tenants y consultar métricas técnicas; no autoriza impersonación ni acceso comercial automático. Decidir qué resuelve seed y qué requiere interfaz. |
 | D-05 | Alta de miembros existentes y política de asignación/transferencia de Owner | Antes de gestión de membresías, etapa 4 | Definir identificación del usuario objetivo sin filtrar cuentas globales, operaciones/rutas y tratamiento del rol Owner. US-03 garantiza Admin/Viewer; no inferir permisos adicionales. Mantener bloqueo transaccional y protección del último Owner. Invitaciones por correo fuera del MVP. |
 | D-06 | Validación y normalización de campos de clientes/productos, especialmente SKU | Antes del CRUD correspondiente, etapas 5 y 6 | Reglas para longitudes, espacios, campos opcionales y búsquedas literales. Definir normalización de SKU y probar collation insensible a mayúsculas/acentos, unicidad y reutilización tras baja. Mantener MXN y centavos enteros. |

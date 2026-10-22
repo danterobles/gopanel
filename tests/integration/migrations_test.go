@@ -23,12 +23,14 @@ func TestMigrationUpDownUpAndDirtyProtection(t *testing.T) {
 	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=? AND engine='InnoDB'", cfg.DBName).Scan(&tables); err != nil {
 		t.Fatal(err)
 	}
-	if tables != 8 {
-		t.Fatalf("expected 7 application tables plus migration version, got %d", tables)
+	if tables != 9 {
+		t.Fatalf("expected 8 application tables plus migration version, got %d", tables)
 	}
 	tenantOwner(t, db, "rollback-fixture")
-	if err := database.Migrate(ctx, cfg, "down"); err != nil {
-		t.Fatal(err)
+	for range 2 {
+		if err := database.Migrate(ctx, cfg, "down"); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if err := database.Migrate(ctx, cfg, "up"); err != nil {
 		t.Fatal(err)

@@ -29,7 +29,7 @@ func Home() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>GoPanel Pilot</title><link rel=\"stylesheet\" href=\"/static/app.css\"></head><body class=\"bg-slate-50 text-slate-900\"><main class=\"mx-auto max-w-3xl px-6 py-16\"><h1 class=\"text-3xl font-bold\">GoPanel Pilot</h1><p class=\"mt-4\">Entorno base listo. Los módulos administrativos se incorporarán por etapas.</p></main></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>GoPanel Pilot</title><link rel=\"stylesheet\" href=\"/static/app.css\"></head><body class=\"bg-slate-50 text-slate-900\"><main class=\"mx-auto max-w-3xl px-6 py-16\"><h1 class=\"text-3xl font-bold\">GoPanel Pilot</h1><p class=\"mt-4\">Administración multiempresa con Go.</p><a href=\"/login\" class=\"mt-6 inline-block rounded-md bg-indigo-700 px-5 py-3 font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600\">Iniciar sesión</a></main></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

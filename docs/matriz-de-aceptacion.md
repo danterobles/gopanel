@@ -2,7 +2,7 @@
 
 Fuente: PRD, ARQUITECTURA y DATA conciliados mediante [ADR-0001](adr/0001-conciliacion-de-contratos-poc.md). Fecha: 2026-10-21.
 
-Esta matriz define escenarios objetivo. La etapa 0 revisó trazabilidad; etapas 1 y 2 aportan evidencia parcial en [validación de etapa 1](validacion-etapa-1.md) y [validación de etapa 2](validacion-etapa-2.md). Se ejecutaron pruebas de bootstrap y persistencia/aislamiento SQL, constraints, transacciones, sesiones persistidas y concurrencia del último Owner. Login, autorización/CSRF HTTP, CRUD E2E, dashboard y SSE siguen planificados. La aceptación completa de una historia requiere todos sus escenarios y los criterios generales de AGENTS; las pruebas SQL no sustituyen las de HTTP.
+Esta matriz define escenarios objetivo. La etapa 0 revisó trazabilidad; etapas 1 y 2 aportan evidencia parcial en [validación de etapa 1](validacion-etapa-1.md) y [validación de etapa 2](validacion-etapa-2.md). Se ejecutaron pruebas de bootstrap y persistencia/aislamiento SQL, constraints, transacciones, sesiones persistidas y concurrencia del último Owner. Etapa 3 añade [evidencia de login/logout, CSRF y selección de empresa](validacion-etapa-3.md), con HTTP normal/HTMX y reinicio real del proceso. RBAC por acción/recurso, CRUD E2E, dashboard y SSE siguen planificados. La aceptación completa de una historia requiere todos sus escenarios y los criterios generales de AGENTS; las pruebas SQL no sustituyen las de HTTP.
 
 ## Datos y niveles
 

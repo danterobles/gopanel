@@ -1,6 +1,6 @@
 # Plan de implementación por etapas
 
-Etapas 0, 1 y 2 autorizadas. Fecha: 2026-10-21. Etapas 0/1 completadas; etapa 2 incorpora persistencia y desarrollo nativo. No se inicia etapa 3 en esta entrega. Las fases orientativas del PRD agrupan estas etapas y su estimación se recalibrará con evidencia del bootstrap.
+Etapas 0–3 autorizadas. Fecha: 2026-10-21. La etapa 3 incorpora identidad, CSRF y selección de tenant sobre MySQL nativo. No se inicia etapa 4 en esta entrega. Las fases orientativas del PRD agrupan estas etapas y su estimación se recalibrará con evidencia del bootstrap.
 
 Evidencia de bootstrap: [validación de etapa 1](validacion-etapa-1.md). La ejecución remota de CI queda pendiente; no se confunde con las comprobaciones locales.
 
@@ -33,4 +33,4 @@ Evidencia de bootstrap: [validación de etapa 1](validacion-etapa-1.md). La ejec
 - La ausencia de contraparte Laravel/Filament impide concluir el benchmark comparativo, aunque permite medir Go.
 - Valores de política y herramientas todavía abiertos tienen etapas límite en [decisiones pendientes](decisiones-pendientes.md); no bloquean documentación ni trabajo independiente.
 
-La siguiente tarea recomendada es la etapa 3: autenticación, CSRF, sesiones HTTP y selección de tenant. D-01 quedó validada contra MySQL local en etapa 2; D-02/D-03 deben cerrarse antes del contrato de identidad. Ver [validación de etapa 2](validacion-etapa-2.md).
+La siguiente tarea recomendada es la etapa 4: RBAC por acción/recurso y gestión de miembros. D-02/D-03 quedan cerradas por ADR-0004; D-04/D-05 deben precisarse antes de esas operaciones. Ver [validación de etapa 3](validacion-etapa-3.md).

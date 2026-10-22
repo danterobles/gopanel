@@ -35,6 +35,12 @@ type Customer struct {
 	DeletedAt sql.NullTime
 }
 
+type LoginRateLimit struct {
+	KeyHash     []byte
+	WindowStart time.Time
+	Attempts    uint32
+}
+
 type Product struct {
 	ID          string
 	TenantID    string

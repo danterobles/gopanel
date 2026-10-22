@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"gopanel/internal/config"
+	"gopanel/internal/platform/auth"
+	authhandler "gopanel/internal/platform/auth/handler"
 	"gopanel/internal/platform/database"
 	httpserver "gopanel/internal/platform/http"
 )
@@ -45,7 +47,13 @@ func run(logger *slog.Logger) int {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	server := httpserver.NewServer(cfg.HTTPAddr, httpserver.NewRouter(db, logger, cfg.HealthTimeout))
+	service := auth.New(db, cfg, nil)
+	router := httpserver.NewRouter(db, logger, cfg.HealthTimeout)
+	authhandler.New(service, cfg.Env == "production", logger).Register(router)
+	maintenanceDone := make(chan struct{})
+	go func() { defer close(maintenanceDone); service.Maintain(ctx, logger) }()
+	defer func() { stop(); <-maintenanceDone }()
+	server := httpserver.NewServer(cfg.HTTPAddr, router)
 	logger.Info("server_started", "addr", listener.Addr().String(), "environment", cfg.Env)
 	if err := httpserver.Serve(ctx, server, listener, cfg.ShutdownTimeout, logger); err != nil {
 		logger.Error("server_failed", "error", err)
