@@ -57,3 +57,13 @@ smoke-auth: build
 
 smoke-rbac: build
 	sh scripts/with-env.sh python3 scripts/smoke-rbac-native.py
+
+.PHONY: test-e2e bench backup
+test-e2e: build
+	sh scripts/with-env.sh $(GO) test -tags=e2e ./tests/e2e -count=1 -timeout=3m -v
+
+bench: build
+	sh scripts/with-env.sh $(GO) test -tags=load ./tests/e2e -run TestLoadHTML -count=1 -timeout=5m -v
+
+backup:
+	sh scripts/with-env.sh $(GO) run ./cmd/backup

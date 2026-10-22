@@ -40,6 +40,22 @@ jobs:
           DB_PASSWORD: ci-only-password
           TEST_DB_USER: root
           TEST_DB_PASSWORD: ci-only-root-password
+      - name: Native binary E2E and recovery rehearsal
+        run: |
+          mysql --version
+          mysqldump --version
+          make test-e2e
+        env:
+          DB_PASSWORD: ci-only-password
+          TEST_DB_USER: root
+          TEST_DB_PASSWORD: ci-only-root-password
+      - name: E2E evidence (no credentials or dumps)
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-e2e-recovery
+          path: |
+            .local/e2e-result.json
+            .local/backup-verification.json
       - name: Compose build and smoke
         run: |
           docker compose up --build -d --wait --wait-timeout 180

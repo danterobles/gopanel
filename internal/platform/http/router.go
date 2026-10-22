@@ -65,17 +65,24 @@ func observe(logger *slog.Logger, recorder *observability.Recorder) func(http.Ha
 			wrapped := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 			start := time.Now()
 			recorder.Start()
+			completed := false
+			defer func() {
+				route := chi.RouteContext(ctx).RoutePattern()
+				if route == "" {
+					route = "unmatched"
+				}
+				status := wrapped.Status()
+				if status == 0 {
+					status = http.StatusOK
+					if !completed {
+						status = http.StatusInternalServerError
+					}
+				}
+				recorder.Finish(r.Method, route, status, time.Since(start))
+				logger.InfoContext(ctx, "http_request", "request_id", id, "method", r.Method, "route", route, "status", status, "duration_ms", float64(time.Since(start).Microseconds())/1000)
+			}()
 			next.ServeHTTP(wrapped, r.WithContext(ctx))
-			route := chi.RouteContext(ctx).RoutePattern()
-			if route == "" {
-				route = "unmatched"
-			}
-			status := wrapped.Status()
-			if status == 0 {
-				status = http.StatusOK
-			}
-			recorder.Finish(r.Method, route, status, time.Since(start))
-			logger.InfoContext(ctx, "http_request", "request_id", id, "method", r.Method, "route", route, "status", status, "duration_ms", float64(time.Since(start).Microseconds())/1000)
+			completed = true
 		})
 	}
 }
