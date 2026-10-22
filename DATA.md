@@ -2,7 +2,7 @@
 
 **Versión:** 1.2 · **Motor:** MySQL 8.0+ (InnoDB) · **Convenciones:** UUID v4 generado en Go como `CHAR(36)`, `DATETIME(6)` UTC, `snake_case`. **Sin Redis ni caché de aplicación.**
 
-Conciliación: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). El esquema SQL de referencia no cambia en la etapa 0.
+Conciliación: [ADR-0001](docs/adr/0001-conciliacion-de-contratos-poc.md). El esquema SQL de referencia se implementó en `migrations/000001_initial.up.sql` durante etapa 2; rollback separado y operación nativa según [ADR-0003](docs/adr/0003-persistencia-y-desarrollo-nativo.md).
 
 ## 1. Relaciones
 ```text
@@ -153,21 +153,21 @@ FROM customers
 WHERE tenant_id = sqlc.arg(tenant_id)
   AND deleted_at IS NULL
   AND (sqlc.arg(search) = ''
-       OR name LIKE CONCAT('%', sqlc.arg(search), '%')
-       OR COALESCE(email, '') LIKE CONCAT('%', sqlc.arg(search), '%'))
+       OR name LIKE CONCAT('%', sqlc.arg(search), '%') ESCAPE '='
+       OR COALESCE(email, '') LIKE CONCAT('%', sqlc.arg(search), '%') ESCAPE '=')
 ORDER BY created_at DESC, id DESC
-LIMIT sqlc.arg(page_size) OFFSET sqlc.arg(page_offset);
+LIMIT ? OFFSET ?;
 ```
-Para `sqlc` verificar compatibilidad de `sqlc.arg` con la versión fijada; el driver MySQL usa placeholders `?` en las consultas preparadas. Escapar `%`, `_` y `\` para búsquedas literales. Para orden dinámico, seleccionar entre consultas/columnas allowlisted; nunca interpolar el parámetro `sort` recibido.
+Con sqlc 1.31.1/MySQL, `sqlc.arg` funciona en filtros; LIMIT/OFFSET requieren placeholders posicionales `?`. El repositorio escapa `=`, `%` y `_` usando `=` como carácter de escape explícito; la barra invertida se conserva literalmente como parte del parámetro. Para orden dinámico, seleccionar entre consultas/columnas allowlisted; nunca interpolar el parámetro `sort` recibido.
 
 ### Actualización aislada por tenant
 ```sql
 -- name: UpdateCustomerName :execrows
 UPDATE customers
-SET name = ?, updated_at = UTC_TIMESTAMP(6)
+SET name = ?
 WHERE tenant_id = ? AND id = ? AND deleted_at IS NULL;
 ```
-Verificar el resultado sin confundir filas modificadas con filas coincidentes: una edición válida sin cambios no debe producir un falso 404. Resolver la existencia con una comprobación acotada al tenant o una configuración del driver verificada para contar coincidencias (ADR-0001). Un recurso ausente, eliminado o de otro tenant recibe 404 genérico. No utilizar `UPDATE ... RETURNING` (no disponible en MySQL 8).
+El pool configura `clientFoundRows=true` para contar filas coincidentes. Verificar el resultado sin confundir filas modificadas con filas coincidentes: una edición válida sin cambios no debe producir un falso 404. Resolver la existencia con una comprobación acotada al tenant o una configuración del driver verificada para contar coincidencias (ADR-0001). Un recurso ausente, eliminado o de otro tenant recibe 404 genérico. No utilizar `UPDATE ... RETURNING` (no disponible en MySQL 8).
 
 ### Dashboard
 ```sql

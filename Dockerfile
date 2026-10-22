@@ -15,9 +15,11 @@ COPY . .
 COPY --from=assets /src/web/static/ web/static/
 RUN go run github.com/a-h/templ/cmd/templ@v0.3.1070 generate
 RUN CGO_ENABLED=0 go build -trimpath -o /out/gopanel ./cmd/server
+RUN CGO_ENABLED=0 go build -trimpath -o /out/migrate ./cmd/migrate
 
 FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
 COPY --from=build /out/gopanel /gopanel
+COPY --from=build /out/migrate /migrate
 EXPOSE 8080
 USER nonroot:nonroot
 ENTRYPOINT ["/gopanel"]

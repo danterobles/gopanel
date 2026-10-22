@@ -8,7 +8,7 @@ Ver [ADR-0001](adr/0001-conciliacion-de-contratos-poc.md): sesiones en MySQL, SS
 
 ## Decisiones cerradas
 
-- D-01: selección y fijación cerradas en [ADR-0002](adr/0002-herramientas-y-bootstrap.md). Generación SQL y ejecución de migraciones contra MySQL se validarán en etapa 2.
+- D-01: selección y fijación cerradas en [ADR-0002](adr/0002-herramientas-y-bootstrap.md). Generación SQL y ejecución de migraciones verificadas contra MySQL local en etapa 2; limitaciones del generador documentadas en ADR-0003.
 
 ## Pendientes y etapas límite
 

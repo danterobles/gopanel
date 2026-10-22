@@ -1,0 +1,17 @@
+version: "2"
+sql:
+  - engine: mysql
+    queries: internal/db/queries
+    schema: migrations
+    gen:
+      go:
+        package: dbgen
+        out: internal/db/generated
+        sql_package: database/sql
+        emit_empty_slices: true
+        overrides:
+          - db_type: json
+            nullable: true
+            go_type:
+              type: byte
+              slice: true

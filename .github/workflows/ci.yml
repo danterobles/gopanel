@@ -15,6 +15,7 @@ jobs:
           MYSQL_USER: gopanel
           MYSQL_PASSWORD: ci-only-password
           MYSQL_ROOT_PASSWORD: ci-only-root-password
+          MYSQL_ROOT_HOST: "%"
         ports:
           - 3306:3306
         options: >-
@@ -37,6 +38,8 @@ jobs:
       - run: make test-integration
         env:
           DB_PASSWORD: ci-only-password
+          TEST_DB_USER: root
+          TEST_DB_PASSWORD: ci-only-root-password
       - name: Compose build and smoke
         run: |
           docker compose up --build -d --wait --wait-timeout 180

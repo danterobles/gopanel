@@ -34,7 +34,7 @@ Leer, en este orden: `PRD.md`, `ARQUITECTURA.md`, `DATA.md`, luego este archivo.
 - **Redis y caché de aplicación fuera de alcance.** Sesiones persistidas en MySQL; eventos SSE mediante broker en memoria, solo una instancia Go en la POC.
 - SSE para eventos unidireccionales; no introducir WebSockets sin un caso justificado.
 - Migraciones versionadas con herramienta elegida y fijada en el repositorio.
-- Docker Compose para desarrollo local y despliegue reproducible.
+- Desarrollo y pruebas locales por defecto con Go, Node 22 y MySQL 8 nativos; el entorno local usa la base `goconcept` y credenciales solo en `.env` privado. Mantener Docker Compose como alternativa y para despliegue reproducible. No detener el MySQL local para pruebas ni ejecutar rollback destructivo sobre la base de trabajo; probarlo en bases temporales.
 
 ## Convenciones
 - Monolito modular, no microservicios.

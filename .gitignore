@@ -1,7 +1,10 @@
 .env
 .env.*
 !.env.example
+!.env.compose.example
 node_modules/
 bin/
 coverage.out
 .DS_Store
+
+.local/
